@@ -94,8 +94,12 @@ public:
                     continue;
                 }
 
-                // TODO: Compute the normals using central differences.
-                normalsTmp[idx] = Vector3f(1, 1, 1); // Needs to be replaced.
+                auto lhs = pointsTmp[idx + 1] - pointsTmp[idx - 1];
+                auto lhs_norm = lhs.normalized();
+                auto rhs = pointsTmp[idx + width] - pointsTmp[idx - width];
+                auto rhs_norm = rhs.normalized();
+
+                normalsTmp[idx] = lhs_norm.cross(rhs_norm);
                 normalsTmp[idx].normalize();
             }
         }

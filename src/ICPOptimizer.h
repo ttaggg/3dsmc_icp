@@ -119,15 +119,20 @@ public:
     template <typename T>
     bool operator()(const T *const pose, T *residuals) const
     {
-        // TODO: Implemented the point-to-point cost function.
-        // The resulting 3D residual should be stored in residuals array. To apply the pose
-        // increment (pose parameters) to the source point, you can use the PoseIncrement
-        // class.
-        // Important: Ceres automatically squares the cost function.
+        PoseIncrement<T> poseIncrement(const_cast<T *>(pose));
 
-        residuals[0] = T(0);
-        residuals[1] = T(0);
-        residuals[2] = T(0);
+        T source[3];
+        fillVector(m_sourcePoint, source);
+
+        T target[3];
+        fillVector(m_targetPoint, target);
+
+        T newSourse[3];
+        poseIncrement.apply(source, newSourse);
+
+        residuals[0] = T(m_weight) * (newSourse[0] - target[0]);
+        residuals[1] = T(m_weight) * (newSourse[1] - target[1]);
+        residuals[2] = T(m_weight) * (newSourse[2] - target[2]);
 
         return true;
     }
@@ -158,13 +163,21 @@ public:
     template <typename T>
     bool operator()(const T *const pose, T *residuals) const
     {
-        // TODO: Implemented the point-to-plane cost function.
-        // The resulting 1D residual should be stored in residuals array. To apply the pose
-        // increment (pose parameters) to the source point, you can use the PoseIncrement
-        // class.
-        // Important: Ceres automatically squares the cost function.
+        PoseIncrement<T> poseIncrement(const_cast<T *>(pose));
 
-        residuals[0] = T(0);
+        T normal[3];
+        fillVector(m_targetNormal, normal);
+
+        T source[3];
+        fillVector(m_sourcePoint, source);
+
+        T target[3];
+        fillVector(m_targetPoint, target);
+
+        T newSourse[3];
+        poseIncrement.apply(source, newSourse);
+
+        residuals[0] = T(m_weight) * (normal[0] * (target[0] - newSourse[0]) + normal[1] * (target[1] - newSourse[1]) + normal[2] * (target[2] - newSourse[2]));
 
         return true;
     }
@@ -259,8 +272,12 @@ protected:
             {
                 const auto &sourceNormal = sourceNormals[i];
                 const auto &targetNormal = targetNormals[match.idx];
-
-                // TODO: Invalidate the match (set it to -1) if the angle between the normals is greater than 60
+                auto angle_rad = (sourceNormal.transpose() * targetNormal).array().acos().value();
+                auto angle = 180.0 * angle_rad / M_PI;
+                if (angle > 60 || angle < -60)
+                {
+                    matches[i].idx = -1;
+                }
             }
         }
     }
@@ -357,8 +374,9 @@ private:
                 if (!sourcePoint.allFinite() || !targetPoint.allFinite())
                     continue;
 
-                // TODO: Create a new point-to-point cost function and add it as constraint (i.e. residual block)
-                // to the Ceres problem.
+                const double &weight = 1.0;
+                ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint, targetPoint, weight);
+                problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
 
                 if (m_bUsePointToPlaneConstraints)
                 {
@@ -367,8 +385,9 @@ private:
                     if (!targetNormal.allFinite())
                         continue;
 
-                    // TODO: Create a new point-to-plane cost function and add it as constraint (i.e. residual block)
-                    // to the Ceres problem.
+                    const double &weight = 1.0;
+                    ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, weight);
+                    problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
                 }
             }
         }
@@ -463,15 +482,24 @@ private:
             const auto &d = targetPoints[i];
             const auto &n = targetNormals[i];
 
-            // TODO: Add the point-to-plane constraints to the system
+            Matrix3f cross_s;
+            cross_s << 0., -s.z(), s.y(),
+                s.z(), 0, -s.x(),
+                -s.y(), s.x(), 0;
 
-            // TODO: Add the point-to-point constraints to the system
+            auto diff = d - s;
 
-            // TODO: Optionally, apply a higher weight to point-to-plane correspondences
+            A.block(4 * i, 0, 3, 3) = -cross_s;
+            A.block(4 * i, 3, 3, 3) = Matrix3f::Identity();
+            b.segment(4 * i, 3) = diff;
+
+            A.block(4 * i + 3, 0, 1, 3) = n.transpose() * -cross_s;
+            A.block(4 * i + 3, 3, 1, 3) = n.transpose();
+            b(4 * i + 3) = n.transpose() * diff;
         }
 
-        // TODO: Solve the system
-        VectorXf x(6);
+        Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+        VectorXf x = cod.solve(b);
 
         float alpha = x(0), beta = x(1), gamma = x(2);
 
@@ -482,8 +510,9 @@ private:
 
         Vector3f translation = x.tail(3);
 
-        // TODO: Build the pose matrix using the rotation and translation matrices
         Matrix4f estimatedPose = Matrix4f::Identity();
+        estimatedPose.block(0, 0, 3, 3) = rotation;
+        estimatedPose.block(0, 3, 3, 1) = translation;
 
         return estimatedPose;
     }
