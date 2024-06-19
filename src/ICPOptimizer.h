@@ -208,6 +208,8 @@ public:
     {
     }
 
+    virtual ~ICPOptimizer() = default;
+
     void setMatchingMaxDistance(float maxDistance)
     {
         m_nearestNeighborSearch->setMatchingMaxDistance(maxDistance);

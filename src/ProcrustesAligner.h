@@ -6,7 +6,7 @@ class ProcrustesAligner
 public:
 	Matrix4f estimatePose(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints)
 	{
-		ASSERT(sourcePoints.size() == targetPoints.size() && "The number of source and target points should be the same, since every source point is matched with corresponding target point.");
+		ASSERT((sourcePoints.size() == targetPoints.size()) && "The number of source and target points should be the same, since every source point is matched with corresponding target point.");
 
 		// We estimate the pose between source and target points using Procrustes algorithm.
 		// Our shapes have the same scale, therefore we don't estimate scale. We estimated rotation and translation
