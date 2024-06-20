@@ -1,0 +1,65 @@
+#pragma once
+
+// The Google logging library (GLOG), used in Ceres, has a conflict with Windows defined constants. This definitions prevents GLOG to use the same constants
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+
+#include <ceres/ceres.h>
+#include <ceres/rotation.h>
+#include <flann/flann.hpp>
+
+#include "SimpleMesh.h"
+#include "NearestNeighbor.h"
+#include "PointCloud.h"
+#include "Constraints.h"
+#include "ProcrustesAligner.h"
+
+/**
+ * ICP optimizer - Abstract Base Class
+ */
+class ICPOptimizer
+{
+public:
+    ICPOptimizer();
+    void setMatchingMaxDistance(float maxDistance);
+    void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints);
+    void setNbOfIterations(unsigned nIterations);
+
+    virtual ~ICPOptimizer() = default;
+    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) = 0;
+
+protected:
+    bool m_bUsePointToPlaneConstraints;
+    unsigned m_nIterations;
+    std::unique_ptr<NearestNeighborSearch> m_nearestNeighborSearch;
+    std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
+    std::vector<Vector3f> transformNormals(const std::vector<Vector3f> &sourceNormals, const Matrix4f &pose);
+    void pruneCorrespondences(const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals, std::vector<Match> &matches);
+};
+
+/**
+ * ICP optimizer - using Ceres for optimization.
+ */
+class CeresICPOptimizer : public ICPOptimizer
+{
+public:
+    CeresICPOptimizer();
+    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+
+private:
+    void configureSolver(ceres::Solver::Options &options);
+    void prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const;
+};
+
+/**
+ * ICP optimizer - using linear least-squares for optimization.
+ */
+class LinearICPOptimizer : public ICPOptimizer
+{
+public:
+    LinearICPOptimizer();
+    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+
+private:
+    Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints);
+    Matrix4f estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals);
+};

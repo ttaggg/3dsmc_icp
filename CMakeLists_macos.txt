@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 
-project(exercise_5)
+project(3dsmc_icp)
 
 # Options
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Libs CACHE PATH "Path to lib folder")
@@ -23,7 +23,7 @@ include_directories(${LZ4_DIR}/include/)
 link_directories(${LZ4_DIR}/lib/)
 
 #find_library(LZ4_LIBRARY lz4)
-#target_link_libraries(exercise_5 PRIVATE ${LZ4_LIBRARY})
+#target_link_libraries(3dsmc_icp PRIVATE ${LZ4_LIBRARY})
 
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
@@ -36,21 +36,27 @@ get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
 
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 
+include_directories(include)
+include_directories(external/data_utils)
+
 set(HEADER_FILES 
-    Eigen.h 
-    SimpleMesh.h 
-    PointCloud.h 
-    VirtualSensor.h 
-    NearestNeighbor.h 
-    ProcrustesAligner.h 
-    ICPOptimizer.h 
-    FreeImageHelper.h
+    external/data_utils/Eigen.h 
+    external/data_utils/SimpleMesh.h 
+    external/data_utils/PointCloud.h 
+    external/data_utils/VirtualSensor.h 
+    include/NearestNeighbor.h 
+    include/ProcrustesAligner.h 
+    include/ICPOptimizer.h 
+    external/data_utils/FreeImageHelper.h
 )
 
 set(SOURCE_FILES 
-    FreeImageHelper.cpp
+    external/data_utils/FreeImageHelper.cpp
+    src/NearestNeighbor.cpp
+    src/ProcrustesAligner.cpp
+    src/ICPOptimizer.cpp
 )
 
-add_executable(exercise_5 main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(exercise_5 ceres freeimage flann Eigen3::Eigen lz4)
-target_include_directories(exercise_5 PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${LZ4_DIR})
+add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(3dsmc_icp ceres freeimage flann Eigen3::Eigen lz4)
+target_include_directories(3dsmc_icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${LZ4_DIR})

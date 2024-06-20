@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Eigen.h"
+#include "VirtualSensor.h"
 
 struct Vertex
 {
