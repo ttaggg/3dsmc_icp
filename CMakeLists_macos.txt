@@ -4,12 +4,6 @@ set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 
 project(3dsmc_icp)
 
-# Options
-set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Libs CACHE PATH "Path to lib folder")
-set(Eigen3_DIR ${LIBRARY_DIR}/Eigen/share/eigen3/cmake CACHE PATH "Path to installed Eigen")
-set(glog_DIR ${LIBRARY_DIR}/glog-lib/lib/cmake/glog CACHE PATH "Path to installed glog")
-set(Ceres_DIR ${LIBRARY_DIR}/Ceres/CMake CACHE PATH "Path to installed Ceres")
-
 set(Flann_INCLUDE_DIR /opt/homebrew/Cellar/flann/1.9.2_1)
 include_directories(${Flann_INCLUDE_DIR}/include/)
 link_directories(${Flann_INCLUDE_DIR}/lib/)
@@ -22,13 +16,11 @@ set(LZ4_DIR /opt/homebrew/Cellar/lz4/1.9.4)
 include_directories(${LZ4_DIR}/include/)
 link_directories(${LZ4_DIR}/lib/)
 
-#find_library(LZ4_LIBRARY lz4)
-#target_link_libraries(3dsmc_icp PRIVATE ${LZ4_LIBRARY})
-
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
 
-#find_package(nanoflann REQUIRED)
+set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
+find_package(Open3D REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(glog REQUIRED)
 get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
@@ -58,5 +50,5 @@ set(SOURCE_FILES
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(3dsmc_icp ceres freeimage flann Eigen3::Eigen lz4)
-target_include_directories(3dsmc_icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${LZ4_DIR})
+target_link_libraries(3dsmc_icp ceres freeimage flann Eigen3::Eigen lz4 Open3D::Open3D)
+target_include_directories(3dsmc_icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR})

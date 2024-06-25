@@ -25,6 +25,8 @@ endif(WIN32)
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
 
+set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
+find_package(Open3D REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(glog REQUIRED)
 get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
@@ -54,7 +56,7 @@ set(SOURCE_FILES
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen)
+target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen  Open3D::Open3D)
 target_include_directories(3dsmc_icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR})
 
 # On Windows copy dll to executable folder

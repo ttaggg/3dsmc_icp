@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <Open3D/Open3D.h>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
@@ -20,6 +21,7 @@ int alignBunnyWithICP()
 	// Load the source and target mesh.
 	const std::string filenameSource = std::string("../../Data/bunny_part2_trans.off");
 	const std::string filenameTarget = std::string("../../Data/bunny_part1.off");
+	const std::string filenameOutput = "./bunny_icp.off";
 
 	SimpleMesh sourceMesh;
 	if (!sourceMesh.loadMesh(filenameSource))
@@ -77,8 +79,24 @@ int alignBunnyWithICP()
 			resultingMesh = SimpleMesh::joinMeshes(SimpleMesh::sphere(targetPoint, 0.001f, Vector4uc(255, 255, 255, 255)), resultingMesh, Matrix4f::Identity());
 		}
 	}
-	resultingMesh.writeMesh(std::string("bunny_icp.off"));
+	resultingMesh.writeMesh(filenameOutput);
 	std::cout << "Resulting mesh written." << std::endl;
+
+	// Visualize the mesh with Open3D.
+	auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
+
+	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
+	{
+		std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
+		return 1;
+	}
+
+	if (!mesh->HasVertexNormals())
+	{
+		mesh->ComputeVertexNormals();
+	}
+
+	open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
 
 	delete optimizer;
 
