@@ -1,4 +1,4 @@
-#include "NearestNeighbor.h"
+#include "Search.h"
 
 Search::Search() : m_maxDistance{0.005f} {}
 
@@ -92,6 +92,48 @@ std::vector<Match> NearestNeighborSearchFlann::queryMatches(const std::vector<Ve
     delete[] query.ptr();
     delete[] indices.ptr();
     delete[] distances.ptr();
+
+    return matches;
+}
+
+ProjectiveCorrespondence::ProjectiveCorrespondence() : Search(), m_maxDistance{0.005f} {}
+
+ProjectiveCorrespondence::~ProjectiveCorrespondence() {}
+
+void ProjectiveCorrespondence::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints)
+{
+    m_targetPoints = targetPoints;
+}
+
+std::vector<Match> ProjectiveCorrespondence::queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints)
+{
+    std::vector<Match> matches;
+    matches.reserve(transformedPoints.size());
+
+    for (const auto &transformedPoint : transformedPoints)
+    {
+        float minDistance = std::numeric_limits<float>::max();
+        int bestMatch = -1;
+
+        for (size_t i = 0; i < m_targetPoints.size(); ++i)
+        {
+            float distance = (transformedPoint - m_targetPoints[i]).norm();
+            if (distance < minDistance && distance <= m_maxDistance)
+            {
+                minDistance = distance;
+                bestMatch = static_cast<int>(i);
+            }
+        }
+
+        if (bestMatch != -1)
+        {
+            matches.push_back(Match{bestMatch, 1.f});
+        }
+        else
+        {
+            matches.push_back(Match{-1, 0.f});
+        }
+    }
 
     return matches;
 }

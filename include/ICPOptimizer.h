@@ -8,7 +8,7 @@
 #include <flann/flann.hpp>
 
 #include "SimpleMesh.h"
-#include "NearestNeighbor.h"
+#include "Search.h"
 #include "PointCloud.h"
 #include "Constraints.h"
 #include "ProcrustesAligner.h"

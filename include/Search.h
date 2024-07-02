@@ -38,3 +38,17 @@ private:
 	flann::Index<flann::L2<float>> *m_index;
 	float *m_flatPoints;
 };
+
+class ProjectiveCorrespondence : public Search
+{
+public:
+	ProjectiveCorrespondence();
+	~ProjectiveCorrespondence();
+
+	void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints);
+	std::vector<Match> queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints);
+
+private:
+	std::vector<Eigen::Vector3f> m_targetPoints;
+	float m_maxDistance;
+};

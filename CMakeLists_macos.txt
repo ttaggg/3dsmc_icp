@@ -21,6 +21,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
 find_package(Open3D REQUIRED)
+
 find_package(Ceres REQUIRED)
 find_package(glog REQUIRED)
 get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
@@ -36,7 +37,7 @@ set(HEADER_FILES
     external/data_utils/SimpleMesh.h 
     external/data_utils/PointCloud.h 
     external/data_utils/VirtualSensor.h 
-    include/NearestNeighbor.h 
+    include/Search.h 
     include/ProcrustesAligner.h 
     include/ICPOptimizer.h 
     external/data_utils/FreeImageHelper.h
@@ -44,7 +45,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES 
     external/data_utils/FreeImageHelper.cpp
-    src/NearestNeighbor.cpp
+    src/Search.cpp
     src/ProcrustesAligner.cpp
     src/ICPOptimizer.cpp
 )

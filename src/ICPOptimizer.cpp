@@ -22,8 +22,7 @@ void ICPOptimizer::setCorrespondenceMethod(CorrMethod method)
     }
     else if (method == PROJ)
     {
-        // change to projective, when its ready
-        m_corrAlgo = std::make_unique<NearestNeighborSearchFlann>();
+        m_corrAlgo = std::make_unique<ProjectiveCorrespondence>();
     }
 }
 

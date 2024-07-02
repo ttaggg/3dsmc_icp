@@ -42,7 +42,7 @@ set(HEADER_FILES
     external/data_utils/SimpleMesh.h 
     external/data_utils/PointCloud.h 
     external/data_utils/VirtualSensor.h 
-    include/NearestNeighbor.h 
+    include/Search.h 
     include/ProcrustesAligner.h 
     include/ICPOptimizer.h 
     external/data_utils/FreeImageHelper.h
@@ -50,7 +50,7 @@ set(HEADER_FILES
 
 set(SOURCE_FILES 
     external/data_utils/FreeImageHelper.cpp
-    src/NearestNeighbor.cpp
+    src/Search.cpp
     src/ProcrustesAligner.cpp
     src/ICPOptimizer.cpp
 )
