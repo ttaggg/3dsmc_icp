@@ -50,6 +50,15 @@ int alignBunnyWithICP()
 		optimizer = new CeresICPOptimizer();
 	}
 
+	if (USE_PROJ_CORRESPONDENCE)
+	{
+		optimizer->setCorrespondenceMethod(PROJ);
+	}
+	else
+	{
+		optimizer->setCorrespondenceMethod(ANN);
+	}
+
 	optimizer->setMatchingMaxDistance(0.0003f);
 	if (USE_POINT_TO_PLANE)
 	{
@@ -60,14 +69,6 @@ int alignBunnyWithICP()
 	{
 		optimizer->usePointToPlaneConstraints(false);
 		optimizer->setNbOfIterations(20);
-	}
-	if (USE_PROJ_CORRESPONDENCE)
-	{
-		optimizer->setCorrespondenceMethod(PROJ);
-	}
-	else
-	{
-		optimizer->setCorrespondenceMethod(ANN);
 	}
 
 	PointCloud source{sourceMesh};

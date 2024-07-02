@@ -7,7 +7,6 @@
 ICPOptimizer::ICPOptimizer() : m_bUsePointToPlaneConstraints{false},
                                m_nIterations{20}
 {
-    setCorrespondenceMethod(ANN); // default
 }
 
 void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
