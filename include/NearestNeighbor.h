@@ -23,21 +23,6 @@ protected:
 };
 
 /**
- * Brute-force nearest neighbor search.
- */
-class NearestNeighborSearchBruteForce : public Search
-{
-public:
-	NearestNeighborSearchBruteForce();
-	void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints);
-	std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints);
-
-private:
-	std::vector<Eigen::Vector3f> m_points;
-	Match getClosestPoint(const Vector3f &p);
-};
-
-/**
  * Nearest neighbor search using FLANN.
  */
 class NearestNeighborSearchFlann : public Search

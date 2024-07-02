@@ -7,51 +7,6 @@ void Search::setMatchingMaxDistance(float maxDistance)
     m_maxDistance = maxDistance;
 }
 
-NearestNeighborSearchBruteForce::NearestNeighborSearchBruteForce() : Search() {}
-
-void NearestNeighborSearchBruteForce::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints)
-{
-    m_points = targetPoints;
-}
-
-std::vector<Match> NearestNeighborSearchBruteForce::queryMatches(const std::vector<Vector3f> &transformedPoints)
-{
-    const unsigned nMatches = transformedPoints.size();
-    std::vector<Match> matches(nMatches);
-    const unsigned nTargetPoints = m_points.size();
-    std::cout << "nMatches: " << nMatches << std::endl;
-    std::cout << "nTargetPoints: " << nTargetPoints << std::endl;
-
-#pragma omp parallel for
-    for (int i = 0; i < nMatches; i++)
-    {
-        matches[i] = getClosestPoint(transformedPoints[i]);
-    }
-
-    return matches;
-}
-
-Match NearestNeighborSearchBruteForce::getClosestPoint(const Vector3f &p)
-{
-    int idx = -1;
-
-    float minDist = std::numeric_limits<float>::max();
-    for (unsigned int i = 0; i < m_points.size(); ++i)
-    {
-        float dist = (p - m_points[i]).norm();
-        if (minDist > dist)
-        {
-            idx = i;
-            minDist = dist;
-        }
-    }
-
-    if (minDist <= m_maxDistance)
-        return Match{idx, 1.f};
-    else
-        return Match{-1, 0.f};
-}
-
 NearestNeighborSearchFlann::NearestNeighborSearchFlann() : Search(),
                                                            m_nTrees{1},
                                                            m_index{nullptr},
