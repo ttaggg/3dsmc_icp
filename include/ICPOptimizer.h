@@ -14,6 +14,15 @@
 #include "ProcrustesAligner.h"
 
 /**
+ * enum for correspondence method: nearest neighbor or projective
+ */
+enum CorrMethod
+{
+    ANN,
+    PROJ,
+};
+
+/**
  * ICP optimizer - Abstract Base Class
  */
 class ICPOptimizer
@@ -21,6 +30,7 @@ class ICPOptimizer
 public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
+    void setCorrespondenceMethod(CorrMethod method);
     void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints);
     void setNbOfIterations(unsigned nIterations);
 
@@ -30,7 +40,7 @@ public:
 protected:
     bool m_bUsePointToPlaneConstraints;
     unsigned m_nIterations;
-    std::unique_ptr<NearestNeighborSearch> m_nearestNeighborSearch;
+    std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
     std::vector<Vector3f> transformNormals(const std::vector<Vector3f> &sourceNormals, const Matrix4f &pose);
     void pruneCorrespondences(const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals, std::vector<Match> &matches);

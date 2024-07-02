@@ -5,14 +5,27 @@
  */
 
 ICPOptimizer::ICPOptimizer() : m_bUsePointToPlaneConstraints{false},
-                               m_nIterations{20},
-                               m_nearestNeighborSearch{std::make_unique<NearestNeighborSearchFlann>()}
+                               m_nIterations{20}
 {
+    setCorrespondenceMethod(ANN); // default
 }
 
 void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
 {
-    m_nearestNeighborSearch->setMatchingMaxDistance(maxDistance);
+    m_corrAlgo->setMatchingMaxDistance(maxDistance);
+}
+
+void ICPOptimizer::setCorrespondenceMethod(CorrMethod method)
+{
+    if (method == ANN)
+    {
+        m_corrAlgo = std::make_unique<NearestNeighborSearchFlann>();
+    }
+    else if (method == PROJ)
+    {
+        // change to projective, when its ready
+        m_corrAlgo = std::make_unique<NearestNeighborSearchFlann>();
+    }
 }
 
 void ICPOptimizer::usePointToPlaneConstraints(bool bUsePointToPlaneConstraints)
@@ -86,7 +99,7 @@ CeresICPOptimizer::CeresICPOptimizer() {}
 void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
-    m_nearestNeighborSearch->buildIndex(target.getPoints());
+    m_corrAlgo->buildIndex(target.getPoints());
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
@@ -106,7 +119,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
 
-        auto matches = m_nearestNeighborSearch->queryMatches(transformedPoints);
+        auto matches = m_corrAlgo->queryMatches(transformedPoints);
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
         clock_t end = clock();
@@ -194,7 +207,7 @@ LinearICPOptimizer::LinearICPOptimizer() {}
 void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
-    m_nearestNeighborSearch->buildIndex(target.getPoints());
+    m_corrAlgo->buildIndex(target.getPoints());
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
@@ -208,7 +221,7 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
 
-        auto matches = m_nearestNeighborSearch->queryMatches(transformedPoints);
+        auto matches = m_corrAlgo->queryMatches(transformedPoints);
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
         clock_t end = clock();

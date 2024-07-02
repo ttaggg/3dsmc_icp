@@ -1,13 +1,13 @@
 #include "NearestNeighbor.h"
 
-NearestNeighborSearch::NearestNeighborSearch() : m_maxDistance{0.005f} {}
+Search::Search() : m_maxDistance{0.005f} {}
 
-void NearestNeighborSearch::setMatchingMaxDistance(float maxDistance)
+void Search::setMatchingMaxDistance(float maxDistance)
 {
     m_maxDistance = maxDistance;
 }
 
-NearestNeighborSearchBruteForce::NearestNeighborSearchBruteForce() : NearestNeighborSearch() {}
+NearestNeighborSearchBruteForce::NearestNeighborSearchBruteForce() : Search() {}
 
 void NearestNeighborSearchBruteForce::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints)
 {
@@ -52,7 +52,7 @@ Match NearestNeighborSearchBruteForce::getClosestPoint(const Vector3f &p)
         return Match{-1, 0.f};
 }
 
-NearestNeighborSearchFlann::NearestNeighborSearchFlann() : NearestNeighborSearch(),
+NearestNeighborSearchFlann::NearestNeighborSearchFlann() : Search(),
                                                            m_nTrees{1},
                                                            m_index{nullptr},
                                                            m_flatPoints{nullptr}

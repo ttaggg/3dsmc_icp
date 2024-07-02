@@ -9,23 +9,23 @@ struct Match
 	float weight;
 };
 
-class NearestNeighborSearch
+class Search
 {
 public:
-	virtual ~NearestNeighborSearch() {}
+	virtual ~Search() {}
 	virtual void setMatchingMaxDistance(float maxDistance);
 	virtual void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints) = 0;
 	virtual std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints) = 0;
 
 protected:
 	float m_maxDistance;
-	NearestNeighborSearch();
+	Search();
 };
 
 /**
  * Brute-force nearest neighbor search.
  */
-class NearestNeighborSearchBruteForce : public NearestNeighborSearch
+class NearestNeighborSearchBruteForce : public Search
 {
 public:
 	NearestNeighborSearchBruteForce();
@@ -40,7 +40,7 @@ private:
 /**
  * Nearest neighbor search using FLANN.
  */
-class NearestNeighborSearchFlann : public NearestNeighborSearch
+class NearestNeighborSearchFlann : public Search
 {
 public:
 	NearestNeighborSearchFlann();
