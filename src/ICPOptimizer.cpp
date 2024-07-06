@@ -26,9 +26,19 @@ void ICPOptimizer::setCorrespondenceMethod(CorrMethod method)
     }
 }
 
+void ICPOptimizer::usePointToPointConstraints(bool bUsePointToPointConstraints)
+{
+    m_bUsePointToPointConstraints = bUsePointToPointConstraints;
+}
+
 void ICPOptimizer::usePointToPlaneConstraints(bool bUsePointToPlaneConstraints)
 {
     m_bUsePointToPlaneConstraints = bUsePointToPlaneConstraints;
+}
+
+void ICPOptimizer::useSymmetricConstraints(bool bUseSymmetricConstraints)
+{
+    m_bUseSymmetricConstraints = bUseSymmetricConstraints;
 }
 
 void ICPOptimizer::setNbOfIterations(unsigned nIterations)
@@ -126,7 +136,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
 
         // Prepare point-to-point and point-to-plane constraints.
         ceres::Problem problem;
-        prepareConstraints(transformedPoints, target.getPoints(), target.getNormals(), matches, poseIncrement, problem);
+        prepareConstraints(transformedPoints, target.getPoints(), source.getNormals(), target.getNormals(), matches, poseIncrement, problem);
 
         // Configure options for the solver.
         ceres::Solver::Options options;
@@ -162,7 +172,9 @@ void CeresICPOptimizer::configureSolver(ceres::Solver::Options &options)
 }
 
 void CeresICPOptimizer::
-    CeresICPOptimizer::prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const
+    CeresICPOptimizer::prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints,
+                                          const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals,
+                                          const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const
 {
     const unsigned nPoints = sourcePoints.size();
 
@@ -174,12 +186,15 @@ void CeresICPOptimizer::
             const auto &sourcePoint = sourcePoints[i];
             const auto &targetPoint = targetPoints[match.idx];
 
-            if (!sourcePoint.allFinite() || !targetPoint.allFinite())
-                continue;
+            if (m_bUsePointToPointConstraints)
+            {
+                if (!sourcePoint.allFinite() || !targetPoint.allFinite())
+                    continue;
 
-            const double &weight = 1.0;
-            ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint, targetPoint, weight);
-            problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+                const double &weight = 1.0;
+                ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint, targetPoint, weight);
+                problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+            }
 
             if (m_bUsePointToPlaneConstraints)
             {
@@ -191,6 +206,23 @@ void CeresICPOptimizer::
                 const double &weight = 1.0;
                 ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, weight);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+            }
+
+            if (m_bUseSymmetricConstraints)
+            {
+                const auto &targetNormal = targetNormals[match.idx];
+                const auto &sourceNormal = sourceNormals[match.idx];
+
+                if (!targetNormal.allFinite() || !sourceNormal.allFinite())
+                    continue;
+
+                const double &weight = 1.0;
+                ceres::CostFunction *cost_function = SymmetricConstraint::create(sourcePoint, targetPoint, sourceNormal, targetNormal, weight);
+                problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+
+                // const double &weight = 1.0;
+                // ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, weight);
+                // problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
         }
     }

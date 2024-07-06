@@ -31,14 +31,18 @@ public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
     void setCorrespondenceMethod(CorrMethod method);
+    void usePointToPointConstraints(bool bUsePointToPointConstraints);
     void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints);
+    void useSymmetricConstraints(bool bUseSymmetricConstraints);
     void setNbOfIterations(unsigned nIterations);
 
     virtual ~ICPOptimizer() = default;
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) = 0;
 
 protected:
+    bool m_bUsePointToPointConstraints;
     bool m_bUsePointToPlaneConstraints;
+    bool m_bUseSymmetricConstraints;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
@@ -57,7 +61,8 @@ public:
 
 private:
     void configureSolver(ceres::Solver::Options &options);
-    void prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const;
+    void prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints,
+                            const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const;
 };
 
 /**

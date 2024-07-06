@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <Open3D/Open3D.h>
@@ -10,7 +11,10 @@
 
 #define SHOW_BUNNY_CORRESPONDENCES 0
 
+#define USE_POINT_TO_POINT 0
 #define USE_POINT_TO_PLANE 0
+#define USE_SYMMETRIC 1
+
 #define USE_LINEAR_ICP 0
 
 #define USE_PROJ_CORRESPONDENCE 0
@@ -60,16 +64,36 @@ int alignBunnyWithICP()
 	}
 
 	optimizer->setMatchingMaxDistance(0.0003f);
+
+	if (USE_POINT_TO_POINT)
+	{
+		optimizer->usePointToPointConstraints(true);
+	}
+	else
+	{
+		optimizer->usePointToPointConstraints(false);
+	}
+
 	if (USE_POINT_TO_PLANE)
 	{
 		optimizer->usePointToPlaneConstraints(true);
-		optimizer->setNbOfIterations(10);
 	}
 	else
 	{
 		optimizer->usePointToPlaneConstraints(false);
-		optimizer->setNbOfIterations(20);
 	}
+
+	if (USE_SYMMETRIC)
+	{
+		optimizer->useSymmetricConstraints(true);
+	}
+	else
+	{
+		optimizer->useSymmetricConstraints(false);
+	}
+
+	// TODO(oleg): use  a flag for this one.
+	optimizer->setNbOfIterations(20);
 
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
@@ -143,17 +167,46 @@ int reconstructRoom()
 		optimizer = new CeresICPOptimizer();
 	}
 
+	if (USE_PROJ_CORRESPONDENCE)
+	{
+		optimizer->setCorrespondenceMethod(PROJ);
+	}
+	else
+	{
+		optimizer->setCorrespondenceMethod(ANN);
+	}
+
 	optimizer->setMatchingMaxDistance(0.1f);
+
+	if (USE_POINT_TO_POINT)
+	{
+		optimizer->usePointToPointConstraints(true);
+	}
+	else
+	{
+		optimizer->usePointToPointConstraints(false);
+	}
+
 	if (USE_POINT_TO_PLANE)
 	{
 		optimizer->usePointToPlaneConstraints(true);
-		optimizer->setNbOfIterations(10);
 	}
 	else
 	{
 		optimizer->usePointToPlaneConstraints(false);
-		optimizer->setNbOfIterations(20);
 	}
+
+	if (USE_SYMMETRIC)
+	{
+		optimizer->useSymmetricConstraints(true);
+	}
+	else
+	{
+		optimizer->useSymmetricConstraints(false);
+	}
+
+	// TODO(oleg): use  a flag for this one.
+	optimizer->setNbOfIterations(10);
 
 	// We store the estimated camera poses.
 	std::vector<Matrix4f> estimatedPoses;
@@ -206,6 +259,7 @@ int reconstructRoom()
 
 int main()
 {
+	assert(USE_POINT_TO_POINT + USE_POINT_TO_PLANE + USE_SYMMETRIC > 0);
 	int result = 0;
 	if (RUN_SHAPE_ICP)
 		result += alignBunnyWithICP();

@@ -189,3 +189,65 @@ protected:
     const float m_weight;
     const float LAMBDA = 1.0f;
 };
+
+class SymmetricConstraint
+{
+public:
+    SymmetricConstraint(const Vector3f &sourcePoint, const Vector3f &targetPoint,
+                        const Vector3f &sourceNormal, const Vector3f &targetNormal,
+                        const float weight)
+        : m_sourcePoint{sourcePoint},
+          m_targetPoint{targetPoint},
+          m_sourceNormal{sourceNormal},
+          m_targetNormal{targetNormal},
+          m_weight{weight}
+    {
+    }
+
+    template <typename T>
+    bool operator()(const T *const pose, T *residuals) const
+    {
+        PoseIncrement<T> poseIncrement(const_cast<T *>(pose));
+
+        T sourceNormal[3];
+        fillVector(m_sourceNormal, sourceNormal);
+
+        T targetNormal[3];
+        fillVector(m_targetNormal, targetNormal);
+
+        T source[3];
+        fillVector(m_sourcePoint, source);
+
+        T target[3];
+        fillVector(m_targetPoint, target);
+
+        T newSource[3];
+        poseIncrement.apply(source, newSource);
+
+        T normalSum[3] = {
+            sourceNormal[0] + targetNormal[0],
+            sourceNormal[1] + targetNormal[1],
+            sourceNormal[2] + targetNormal[2]};
+
+        residuals[0] = T(m_weight) * (normalSum[0] * (newSource[0] - target[0]) +
+                                      normalSum[1] * (newSource[1] - target[1]) +
+                                      normalSum[2] * (newSource[2] - target[2]));
+
+        return true;
+    }
+
+    static ceres::CostFunction *create(const Vector3f &sourcePoint, const Vector3f &targetPoint,
+                                       const Vector3f &sourceNormal, const Vector3f &targetNormal,
+                                       const float weight)
+    {
+        return new ceres::AutoDiffCostFunction<SymmetricConstraint, 1, 6>(
+            new SymmetricConstraint(sourcePoint, targetPoint, sourceNormal, targetNormal, weight));
+    }
+
+protected:
+    const Vector3f m_sourcePoint;
+    const Vector3f m_targetPoint;
+    const Vector3f m_sourceNormal;
+    const Vector3f m_targetNormal;
+    const float m_weight;
+};
