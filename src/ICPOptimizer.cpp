@@ -275,13 +275,17 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         }
 
         // Estimate the new pose
-        if (m_bUsePointToPlaneConstraints)
+        if (m_bUsePointToPointConstraints)
+        {
+            estimatedPose = estimatePosePointToPoint(sourcePoints, targetPoints) * estimatedPose;
+        }
+        else if (m_bUsePointToPlaneConstraints)
         {
             estimatedPose = estimatePosePointToPlane(sourcePoints, targetPoints, target.getNormals()) * estimatedPose;
         }
         else
         {
-            estimatedPose = estimatePosePointToPoint(sourcePoints, targetPoints) * estimatedPose;
+            estimatedPose = estimatePoseSymmetric(sourcePoints, targetPoints, source.getNormals(), target.getNormals()) * estimatedPose;
         }
 
         std::cout << "Optimization iteration done." << std::endl;
@@ -291,7 +295,8 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
     initialPose = estimatedPose;
 }
 
-Matrix4f LinearICPOptimizer::estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints)
+Matrix4f LinearICPOptimizer::estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,
+                                                      const std::vector<Vector3f> &targetPoints)
 {
     ProcrustesAligner procrustAligner;
     Matrix4f estimatedPose = procrustAligner.estimatePose(sourcePoints, targetPoints);
@@ -300,7 +305,9 @@ Matrix4f LinearICPOptimizer::estimatePosePointToPoint(const std::vector<Vector3f
 }
 
 Matrix4f LinearICPOptimizer::
-    LinearICPOptimizer::estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals)
+    LinearICPOptimizer::estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints,
+                                                 const std::vector<Vector3f> &targetPoints,
+                                                 const std::vector<Vector3f> &targetNormals)
 {
     const unsigned nPoints = sourcePoints.size();
 
@@ -328,6 +335,65 @@ Matrix4f LinearICPOptimizer::
         A.block(4 * i + 3, 0, 1, 3) = n.transpose() * -cross_s;
         A.block(4 * i + 3, 3, 1, 3) = n.transpose();
         b(4 * i + 3) = n.transpose() * diff;
+    }
+
+    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+    VectorXf x = cod.solve(b);
+
+    float alpha = x(0), beta = x(1), gamma = x(2);
+
+    // Build the pose matrix
+    Matrix3f rotation = AngleAxisf(alpha, Vector3f::UnitX()).toRotationMatrix() *
+                        AngleAxisf(beta, Vector3f::UnitY()).toRotationMatrix() *
+                        AngleAxisf(gamma, Vector3f::UnitZ()).toRotationMatrix();
+
+    Vector3f translation = x.tail(3);
+
+    Matrix4f estimatedPose = Matrix4f::Identity();
+    estimatedPose.block(0, 0, 3, 3) = rotation;
+    estimatedPose.block(0, 3, 3, 1) = translation;
+
+    return estimatedPose;
+}
+
+Matrix4f LinearICPOptimizer::estimatePoseSymmetric(const std::vector<Vector3f> &sourcePoints,
+                                                   const std::vector<Vector3f> &targetPoints,
+                                                   const std::vector<Vector3f> &sourceNormals,
+                                                   const std::vector<Vector3f> &targetNormals)
+{
+    const unsigned nPoints = sourcePoints.size();
+
+    // Build the system
+    MatrixXf A = MatrixXf::Zero(4 * nPoints, 6);
+    VectorXf b = VectorXf::Zero(4 * nPoints);
+
+    for (unsigned i = 0; i < nPoints; i++)
+    {
+        const auto &s = sourcePoints[i];
+        const auto &d = targetPoints[i];
+        const auto &ns = sourceNormals[i];
+        const auto &nt = targetNormals[i];
+
+        Matrix3f cross_s;
+        cross_s << 0., -s.z(), s.y(),
+            s.z(), 0, -s.x(),
+            -s.y(), s.x(), 0;
+
+        Matrix3f cross_d;
+        cross_d << 0., -d.z(), d.y(),
+            d.z(), 0, -d.x(),
+            -d.y(), d.x(), 0;
+
+        auto diff = d - s;
+        Vector3f normalSum = ns + nt;
+
+        A.block(4 * i, 0, 3, 3) = -cross_s;
+        A.block(4 * i, 3, 3, 3) = Matrix3f::Identity();
+        b.segment(4 * i, 3) = diff;
+
+        A.block(4 * i + 3, 0, 1, 3) = normalSum.transpose() * (-cross_s + cross_d);
+        A.block(4 * i + 3, 3, 1, 3) = normalSum.transpose();
+        b(4 * i + 3) = normalSum.transpose() * diff;
     }
 
     Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);

@@ -259,7 +259,15 @@ int reconstructRoom()
 
 int main()
 {
-	assert(USE_POINT_TO_POINT + USE_POINT_TO_PLANE + USE_SYMMETRIC > 0);
+	if (USE_LINEAR_ICP)
+	{
+		assert(USE_POINT_TO_POINT + USE_POINT_TO_PLANE + USE_SYMMETRIC == 1);
+	}
+	else
+	{
+		assert(USE_POINT_TO_POINT + USE_POINT_TO_PLANE + USE_SYMMETRIC > 0);
+	}
+
 	int result = 0;
 	if (RUN_SHAPE_ICP)
 		result += alignBunnyWithICP();

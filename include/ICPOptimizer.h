@@ -61,8 +61,13 @@ public:
 
 private:
     void configureSolver(ceres::Solver::Options &options);
-    void prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints,
-                            const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const;
+    void prepareConstraints(const std::vector<Vector3f> &sourcePoints,
+                            const std::vector<Vector3f> &targetPoints,
+                            const std::vector<Vector3f> &sourceNormals,
+                            const std::vector<Vector3f> &targetNormals,
+                            const std::vector<Match> matches,
+                            const PoseIncrement<double> &poseIncrement,
+                            ceres::Problem &problem) const;
 };
 
 /**
@@ -72,9 +77,18 @@ class LinearICPOptimizer : public ICPOptimizer
 {
 public:
     LinearICPOptimizer();
-    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+    virtual void estimatePose(const PointCloud &source,
+                              const PointCloud &target,
+                              Matrix4f &initialPose) override;
 
 private:
-    Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints);
-    Matrix4f estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals);
+    Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,
+                                      const std::vector<Vector3f> &targetPoints);
+    Matrix4f estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints,
+                                      const std::vector<Vector3f> &targetPoints,
+                                      const std::vector<Vector3f> &targetNormals);
+    Matrix4f estimatePoseSymmetric(const std::vector<Vector3f> &sourcePoints,
+                                   const std::vector<Vector3f> &targetPoints,
+                                   const std::vector<Vector3f> &sourceNormals,
+                                   const std::vector<Vector3f> &targetNormals);
 };
