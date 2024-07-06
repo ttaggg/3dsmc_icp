@@ -9,20 +9,25 @@
 #include "ICPOptimizer.h"
 #include "PointCloud.h"
 
-#define SHOW_BUNNY_CORRESPONDENCES 0
+struct ICPConfiguration
+{
+	// Task
+	bool runShapeICP = false;
+	bool runSequenceICP = false;
+	// ICP type
+	bool useLinearICP = false;
+	// ICP objective(s)
+	bool usePointToPoint = false;
+	bool usePointToPlane = false;
+	bool useSymmetric = false;
+	// Correspondence method (ANN / PROJ)
+	CorrMethod correspondenceMethod = ANN;
+	// Other settings
+	float matchingMaxDistance = 0.0f;
+	int nbOfIterations = 0;
+};
 
-#define USE_POINT_TO_POINT 0
-#define USE_POINT_TO_PLANE 0
-#define USE_SYMMETRIC 1
-
-#define USE_LINEAR_ICP 0
-
-#define USE_PROJ_CORRESPONDENCE 0
-
-#define RUN_SHAPE_ICP 1
-#define RUN_SEQUENCE_ICP 0
-
-int alignBunnyWithICP()
+int alignBunnyWithICP(const ICPConfiguration &config)
 {
 	// Load the source and target mesh.
 	const std::string filenameSource = std::string("../../Data/bunny_part2_trans.off");
@@ -45,7 +50,7 @@ int alignBunnyWithICP()
 
 	// Estimate the pose from source to target mesh with ICP optimization.
 	ICPOptimizer *optimizer = nullptr;
-	if (USE_LINEAR_ICP)
+	if (config.useLinearICP)
 	{
 		optimizer = new LinearICPOptimizer();
 	}
@@ -54,46 +59,12 @@ int alignBunnyWithICP()
 		optimizer = new CeresICPOptimizer();
 	}
 
-	if (USE_PROJ_CORRESPONDENCE)
-	{
-		optimizer->setCorrespondenceMethod(PROJ);
-	}
-	else
-	{
-		optimizer->setCorrespondenceMethod(ANN);
-	}
-
-	optimizer->setMatchingMaxDistance(0.0003f);
-
-	if (USE_POINT_TO_POINT)
-	{
-		optimizer->usePointToPointConstraints(true);
-	}
-	else
-	{
-		optimizer->usePointToPointConstraints(false);
-	}
-
-	if (USE_POINT_TO_PLANE)
-	{
-		optimizer->usePointToPlaneConstraints(true);
-	}
-	else
-	{
-		optimizer->usePointToPlaneConstraints(false);
-	}
-
-	if (USE_SYMMETRIC)
-	{
-		optimizer->useSymmetricConstraints(true);
-	}
-	else
-	{
-		optimizer->useSymmetricConstraints(false);
-	}
-
-	// TODO(oleg): use  a flag for this one.
-	optimizer->setNbOfIterations(20);
+	optimizer->setCorrespondenceMethod(config.correspondenceMethod);
+	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
+	optimizer->usePointToPointConstraints(config.usePointToPoint);
+	optimizer->usePointToPlaneConstraints(config.usePointToPlane);
+	optimizer->useSymmetricConstraints(config.useSymmetric);
+	optimizer->setNbOfIterations(config.nbOfIterations);
 
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
@@ -103,17 +74,6 @@ int alignBunnyWithICP()
 
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-	if (SHOW_BUNNY_CORRESPONDENCES)
-	{
-		for (const auto &sourcePoint : source.getPoints())
-		{
-			resultingMesh = SimpleMesh::joinMeshes(SimpleMesh::sphere(sourcePoint, 0.001f), resultingMesh, estimatedPose);
-		}
-		for (const auto &targetPoint : target.getPoints())
-		{
-			resultingMesh = SimpleMesh::joinMeshes(SimpleMesh::sphere(targetPoint, 0.001f, Vector4uc(255, 255, 255, 255)), resultingMesh, Matrix4f::Identity());
-		}
-	}
 	resultingMesh.writeMesh(filenameOutput);
 	std::cout << "Resulting mesh written." << std::endl;
 
@@ -138,7 +98,7 @@ int alignBunnyWithICP()
 	return 0;
 }
 
-int reconstructRoom()
+int reconstructRoom(const ICPConfiguration &config)
 {
 	std::string filenameIn = std::string("../../Data/rgbd_dataset_freiburg1_xyz/");
 	std::string filenameBaseOut = std::string("mesh_");
@@ -158,7 +118,7 @@ int reconstructRoom()
 
 	// Setup the optimizer.
 	ICPOptimizer *optimizer = nullptr;
-	if (USE_LINEAR_ICP)
+	if (config.useLinearICP)
 	{
 		optimizer = new LinearICPOptimizer();
 	}
@@ -167,46 +127,12 @@ int reconstructRoom()
 		optimizer = new CeresICPOptimizer();
 	}
 
-	if (USE_PROJ_CORRESPONDENCE)
-	{
-		optimizer->setCorrespondenceMethod(PROJ);
-	}
-	else
-	{
-		optimizer->setCorrespondenceMethod(ANN);
-	}
-
-	optimizer->setMatchingMaxDistance(0.1f);
-
-	if (USE_POINT_TO_POINT)
-	{
-		optimizer->usePointToPointConstraints(true);
-	}
-	else
-	{
-		optimizer->usePointToPointConstraints(false);
-	}
-
-	if (USE_POINT_TO_PLANE)
-	{
-		optimizer->usePointToPlaneConstraints(true);
-	}
-	else
-	{
-		optimizer->usePointToPlaneConstraints(false);
-	}
-
-	if (USE_SYMMETRIC)
-	{
-		optimizer->useSymmetricConstraints(true);
-	}
-	else
-	{
-		optimizer->useSymmetricConstraints(false);
-	}
-
-	// TODO(oleg): use  a flag for this one.
-	optimizer->setNbOfIterations(10);
+	optimizer->setCorrespondenceMethod(config.correspondenceMethod);
+	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
+	optimizer->usePointToPointConstraints(config.usePointToPoint);
+	optimizer->usePointToPlaneConstraints(config.usePointToPlane);
+	optimizer->useSymmetricConstraints(config.useSymmetric);
+	optimizer->setNbOfIterations(config.nbOfIterations);
 
 	// We store the estimated camera poses.
 	std::vector<Matrix4f> estimatedPoses;
@@ -259,20 +185,34 @@ int reconstructRoom()
 
 int main()
 {
-	if (USE_LINEAR_ICP)
+	// TODO(oleg): make presets for configs
+	ICPConfiguration config;
+	// Task
+	config.runShapeICP = true;
+	// ICP type
+	config.useLinearICP = false;
+	// ICP objective(s)
+	config.useSymmetric = true;
+	// Correspondence method
+	config.correspondenceMethod = ANN; // ANN or PROJ
+	// Other settings
+	config.matchingMaxDistance = 0.0003f; // 0.1f for config.runSequenceICP = true
+	config.nbOfIterations = 20;			  // 10 for config.runSequenceICP = true
+
+	if (config.useLinearICP)
 	{
-		assert(USE_POINT_TO_POINT + USE_POINT_TO_PLANE + USE_SYMMETRIC == 1);
+		assert(config.usePointToPoint + config.usePointToPlane + config.useSymmetric == 1);
 	}
 	else
 	{
-		assert(USE_POINT_TO_POINT + USE_POINT_TO_PLANE + USE_SYMMETRIC > 0);
+		assert(config.usePointToPoint + config.usePointToPlane + config.useSymmetric > 0);
 	}
 
 	int result = 0;
-	if (RUN_SHAPE_ICP)
-		result += alignBunnyWithICP();
-	if (RUN_SEQUENCE_ICP)
-		result += reconstructRoom();
+	if (config.runShapeICP)
+		result += alignBunnyWithICP(config);
+	if (config.runSequenceICP)
+		result += reconstructRoom(config);
 
 	return result;
 }
