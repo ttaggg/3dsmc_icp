@@ -1,4 +1,3 @@
-#include <cassert>
 #include <iostream>
 #include <fstream>
 #include <Open3D/Open3D.h>
@@ -7,54 +6,8 @@
 #include "VirtualSensor.h"
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
+#include "ICPConfiguration.h"
 #include "PointCloud.h"
-#include <yaml-cpp/yaml.h>
-
-struct ICPConfiguration
-{
-	// Task
-	bool runShapeICP = false;
-	bool runSequenceICP = false;
-	// ICP type
-	bool useLinearICP = false;
-	// ICP objective(s)
-	bool usePointToPoint = false;
-	bool usePointToPlane = false;
-	bool useSymmetric = false;
-	// Correspondence method (ANN / PROJ)
-	CorrMethod correspondenceMethod = ANN;
-	// Other settings
-	float matchingMaxDistance = 0.0f;
-	int nbOfIterations = 0;
-
-	void loadFromYaml(const std::string &filename)
-	{
-		YAML::Node config = YAML::LoadFile(filename);
-		runShapeICP = config["runShapeICP"].as<bool>(runShapeICP);
-		runSequenceICP = config["runSequenceICP"].as<bool>(runSequenceICP);
-		useLinearICP = config["useLinearICP"].as<bool>(useLinearICP);
-		usePointToPoint = config["usePointToPoint"].as<bool>(usePointToPoint);
-		usePointToPlane = config["usePointToPlane"].as<bool>(usePointToPlane);
-		useSymmetric = config["useSymmetric"].as<bool>(useSymmetric);
-		matchingMaxDistance = config["matchingMaxDistance"].as<float>(matchingMaxDistance);
-		nbOfIterations = config["nbOfIterations"].as<int>(nbOfIterations);
-
-		// Custom types.
-		std::string method = config["correspondenceMethod"].as<std::string>();
-		if (method == "ANN")
-		{
-			correspondenceMethod = ANN;
-		}
-		else if (method == "PROJ")
-		{
-			correspondenceMethod = PROJ;
-		}
-		else
-		{
-			throw std::runtime_error("Unknown correspondence method: " + method);
-		}
-	}
-};
 
 int alignBunnyWithICP(const ICPConfiguration &config)
 {
@@ -222,24 +175,9 @@ int main(int argc, char *argv[])
 
 	// Load config from file.
 	ICPConfiguration config;
-	try
-	{
-		config.loadFromYaml(argv[1]);
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << std::endl;
-		return -1;
-	}
-
-	if (config.useLinearICP)
-	{
-		assert(config.usePointToPoint + config.usePointToPlane + config.useSymmetric == 1);
-	}
-	else
-	{
-		assert(config.usePointToPoint + config.usePointToPlane + config.useSymmetric > 0);
-	}
+	config.loadFromYaml(argv[1]);
+	config.sanityCheck();
+	config.show();
 
 	int result = 0;
 	if (config.runShapeICP)

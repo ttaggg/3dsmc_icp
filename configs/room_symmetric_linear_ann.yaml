@@ -1,14 +1,11 @@
 # Task
-runShapeICP: false
 runSequenceICP: true
 # ICP type
 useLinearICP: true
 # ICP objective(s)
-usePointToPoint: false
 usePointToPlane: true
-useSymmetric: false
 # Correspondence method (ANN / PROJ)
 correspondenceMethod: ANN
 # Other settings
-matchingMaxDistance: 0.0003
-nbOfIterations: 20
+matchingMaxDistance: 0.1
+nbOfIterations: 10

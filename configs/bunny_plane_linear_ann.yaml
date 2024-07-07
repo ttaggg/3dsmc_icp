@@ -1,12 +1,9 @@
 # Task
 runShapeICP: true
-runSequenceICP: false
 # ICP type
 useLinearICP: true
 # ICP objective(s)
-usePointToPoint: false
 usePointToPlane: true
-useSymmetric: false
 # Correspondence method (ANN / PROJ)
 correspondenceMethod: ANN
 # Other settings

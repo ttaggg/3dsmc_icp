@@ -37,13 +37,14 @@ include_directories(include)
 include_directories(external/data_utils)
 
 set(HEADER_FILES 
-    external/data_utils/Eigen.h 
-    external/data_utils/SimpleMesh.h 
-    external/data_utils/PointCloud.h 
-    external/data_utils/VirtualSensor.h 
-    include/Search.h 
-    include/ProcrustesAligner.h 
-    include/ICPOptimizer.h 
+    external/data_utils/Eigen.h
+    external/data_utils/SimpleMesh.h
+    external/data_utils/PointCloud.h
+    external/data_utils/VirtualSensor.h
+    include/Search.h
+    include/ProcrustesAligner.h
+    include/ICPOptimizer.h
+    include/ICPConfiguration.h
     external/data_utils/FreeImageHelper.h
 )
 

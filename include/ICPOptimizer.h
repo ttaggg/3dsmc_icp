@@ -12,15 +12,7 @@
 #include "PointCloud.h"
 #include "Constraints.h"
 #include "ProcrustesAligner.h"
-
-/**
- * enum for correspondence method: nearest neighbor or projective
- */
-enum CorrMethod
-{
-    ANN,
-    PROJ,
-};
+#include "ICPConfiguration.h"
 
 /**
  * ICP optimizer - Abstract Base Class
