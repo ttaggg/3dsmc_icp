@@ -26,19 +26,25 @@ void ICPOptimizer::setCorrespondenceMethod(CorrMethod method)
     }
 }
 
-void ICPOptimizer::usePointToPointConstraints(bool bUsePointToPointConstraints)
+void ICPOptimizer::usePointToPointConstraints(bool bUsePointToPointConstraints,
+                                              double weightPointToPointConstraints)
 {
     m_bUsePointToPointConstraints = bUsePointToPointConstraints;
+    m_weightPointToPointConstraints = weightPointToPointConstraints;
 }
 
-void ICPOptimizer::usePointToPlaneConstraints(bool bUsePointToPlaneConstraints)
+void ICPOptimizer::usePointToPlaneConstraints(bool bUsePointToPlaneConstraints,
+                                              double weightPointToPlaneConstraints)
 {
     m_bUsePointToPlaneConstraints = bUsePointToPlaneConstraints;
+    m_weightPointToPlaneConstraints = weightPointToPlaneConstraints;
 }
 
-void ICPOptimizer::useSymmetricConstraints(bool bUseSymmetricConstraints)
+void ICPOptimizer::useSymmetricConstraints(bool bUseSymmetricConstraints,
+                                           double weightSymmetricConstraints)
 {
     m_bUseSymmetricConstraints = bUseSymmetricConstraints;
+    m_weightSymmetricConstraints = weightSymmetricConstraints;
 }
 
 void ICPOptimizer::setNbOfIterations(unsigned nIterations)
@@ -191,8 +197,9 @@ void CeresICPOptimizer::
                 if (!sourcePoint.allFinite() || !targetPoint.allFinite())
                     continue;
 
-                const double &weight = 1.0;
-                ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint, targetPoint, weight);
+                ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint,
+                                                                                    targetPoint,
+                                                                                    m_weightPointToPointConstraints);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
 
@@ -203,8 +210,10 @@ void CeresICPOptimizer::
                 if (!targetNormal.allFinite())
                     continue;
 
-                const double &weight = 1.0;
-                ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, weight);
+                ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint,
+                                                                                    targetPoint,
+                                                                                    targetNormal,
+                                                                                    m_weightPointToPlaneConstraints);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
 
@@ -216,13 +225,12 @@ void CeresICPOptimizer::
                 if (!targetNormal.allFinite() || !sourceNormal.allFinite())
                     continue;
 
-                const double &weight = 1.0;
-                ceres::CostFunction *cost_function = SymmetricConstraint::create(sourcePoint, targetPoint, sourceNormal, targetNormal, weight);
+                ceres::CostFunction *cost_function = SymmetricConstraint::create(sourcePoint,
+                                                                                 targetPoint,
+                                                                                 sourceNormal,
+                                                                                 targetNormal,
+                                                                                 m_weightSymmetricConstraints);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
-
-                // const double &weight = 1.0;
-                // ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, weight);
-                // problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
         }
     }
@@ -283,9 +291,14 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         {
             estimatedPose = estimatePosePointToPlane(sourcePoints, targetPoints, target.getNormals()) * estimatedPose;
         }
-        else
+        else if (m_bUseSymmetricConstraints)
         {
             estimatedPose = estimatePoseSymmetric(sourcePoints, targetPoints, source.getNormals(), target.getNormals()) * estimatedPose;
+        }
+        else
+        {
+            std::cout << "Flags for all methods are set to false." << std::endl;
+            exit(1);
         }
 
         std::cout << "Optimization iteration done." << std::endl;

@@ -23,9 +23,9 @@ public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
     void setCorrespondenceMethod(CorrMethod method);
-    void usePointToPointConstraints(bool bUsePointToPointConstraints);
-    void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints);
-    void useSymmetricConstraints(bool bUseSymmetricConstraints);
+    void usePointToPointConstraints(bool bUsePointToPointConstraints, double weightPointToPointConstraints);
+    void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints, double weightPointToPlaneConstraints);
+    void useSymmetricConstraints(bool bUseSymmetricConstraints, double weightSymmetricConstraints);
     void setNbOfIterations(unsigned nIterations);
 
     virtual ~ICPOptimizer() = default;
@@ -33,8 +33,11 @@ public:
 
 protected:
     bool m_bUsePointToPointConstraints;
+    bool m_weightPointToPointConstraints;
     bool m_bUsePointToPlaneConstraints;
+    bool m_weightPointToPlaneConstraints;
     bool m_bUseSymmetricConstraints;
+    bool m_weightSymmetricConstraints;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);

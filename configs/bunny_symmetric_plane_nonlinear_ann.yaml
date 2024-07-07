@@ -1,0 +1,14 @@
+# Task
+runShapeICP: true
+# ICP type
+useLinearICP: false
+# ICP objective(s)
+useSymmetric: true
+weightSymmetric: 1.0
+usePointToPlane: true
+weightPointToPlane: 0.5
+# Correspondence method (ANN / PROJ)
+correspondenceMethod: ANN
+# Other settings
+matchingMaxDistance: 0.0003
+nbOfIterations: 20

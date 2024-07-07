@@ -43,9 +43,9 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 
 	optimizer->setCorrespondenceMethod(config.correspondenceMethod);
 	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
-	optimizer->usePointToPointConstraints(config.usePointToPoint);
-	optimizer->usePointToPlaneConstraints(config.usePointToPlane);
-	optimizer->useSymmetricConstraints(config.useSymmetric);
+	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
+	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
+	optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
 	optimizer->setNbOfIterations(config.nbOfIterations);
 
 	PointCloud source{sourceMesh};
@@ -111,9 +111,9 @@ int reconstructRoom(const ICPConfiguration &config)
 
 	optimizer->setCorrespondenceMethod(config.correspondenceMethod);
 	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
-	optimizer->usePointToPointConstraints(config.usePointToPoint);
-	optimizer->usePointToPlaneConstraints(config.usePointToPlane);
-	optimizer->useSymmetricConstraints(config.useSymmetric);
+	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
+	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
+	optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
 	optimizer->setNbOfIterations(config.nbOfIterations);
 
 	// We store the estimated camera poses.
