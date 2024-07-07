@@ -8,6 +8,7 @@
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
 #include "PointCloud.h"
+#include <yaml-cpp/yaml.h>
 
 struct ICPConfiguration
 {
@@ -25,6 +26,34 @@ struct ICPConfiguration
 	// Other settings
 	float matchingMaxDistance = 0.0f;
 	int nbOfIterations = 0;
+
+	void loadFromYaml(const std::string &filename)
+	{
+		YAML::Node config = YAML::LoadFile(filename);
+		runShapeICP = config["runShapeICP"].as<bool>(runShapeICP);
+		runSequenceICP = config["runSequenceICP"].as<bool>(runSequenceICP);
+		useLinearICP = config["useLinearICP"].as<bool>(useLinearICP);
+		usePointToPoint = config["usePointToPoint"].as<bool>(usePointToPoint);
+		usePointToPlane = config["usePointToPlane"].as<bool>(usePointToPlane);
+		useSymmetric = config["useSymmetric"].as<bool>(useSymmetric);
+		matchingMaxDistance = config["matchingMaxDistance"].as<float>(matchingMaxDistance);
+		nbOfIterations = config["nbOfIterations"].as<int>(nbOfIterations);
+
+		// Custom types.
+		std::string method = config["correspondenceMethod"].as<std::string>();
+		if (method == "ANN")
+		{
+			correspondenceMethod = ANN;
+		}
+		else if (method == "PROJ")
+		{
+			correspondenceMethod = PROJ;
+		}
+		else
+		{
+			throw std::runtime_error("Unknown correspondence method: " + method);
+		}
+	}
 };
 
 int alignBunnyWithICP(const ICPConfiguration &config)
@@ -183,21 +212,25 @@ int reconstructRoom(const ICPConfiguration &config)
 	return 0;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-	// TODO(oleg): make presets for configs
+	if (argc < 2)
+	{
+		std::cerr << "Usage: " << argv[0] << " <config.yaml>" << std::endl;
+		return -1;
+	}
+
+	// Load config from file.
 	ICPConfiguration config;
-	// Task
-	config.runShapeICP = true;
-	// ICP type
-	config.useLinearICP = false;
-	// ICP objective(s)
-	config.useSymmetric = true;
-	// Correspondence method
-	config.correspondenceMethod = ANN; // ANN or PROJ
-	// Other settings
-	config.matchingMaxDistance = 0.0003f; // 0.1f for config.runSequenceICP = true
-	config.nbOfIterations = 20;			  // 10 for config.runSequenceICP = true
+	try
+	{
+		config.loadFromYaml(argv[1]);
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << e.what() << std::endl;
+		return -1;
+	}
 
 	if (config.useLinearICP)
 	{

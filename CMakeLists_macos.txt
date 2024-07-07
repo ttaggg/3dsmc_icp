@@ -16,6 +16,10 @@ set(LZ4_DIR /opt/homebrew/Cellar/lz4/1.9.4)
 include_directories(${LZ4_DIR}/include/)
 link_directories(${LZ4_DIR}/lib/)
 
+set(YAML_CPP_DIR /opt/homebrew/Cellar/yaml-cpp/0.8.0/)
+include_directories(${YAML_CPP_DIR}/include/)
+link_directories(${YAML_CPP_DIR}/lib/)
+
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
 
@@ -51,5 +55,5 @@ set(SOURCE_FILES
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(3dsmc_icp ceres freeimage flann Eigen3::Eigen lz4 Open3D::Open3D)
-target_include_directories(3dsmc_icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR})
+target_link_libraries(3dsmc_icp ceres freeimage flann Eigen3::Eigen lz4 Open3D::Open3D yaml-cpp)
+target_include_directories(3dsmc_icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR}, ${YAML_CPP_DIR})
