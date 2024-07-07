@@ -27,6 +27,8 @@ public:
     double weightPointToPlane = 1.;
     bool useSymmetric = false;
     double weightSymmetric = 1.;
+    // Whether to use color information.
+    bool useColor = false;
     // Correspondence method (ANN / PROJ)
     CorrMethod correspondenceMethod = ANN;
     // Other settings

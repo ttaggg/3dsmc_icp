@@ -49,6 +49,13 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     {
         weightSymmetric = config["weightSymmetric"].as<double>();
     }
+
+    // Whether to use color information.
+    if (config["useColor"])
+    {
+        useColor = config["useColor"].as<bool>();
+    }
+
     // Other setting.
     if (config["matchingMaxDistance"])
     {
@@ -172,5 +179,11 @@ void ICPConfiguration::_sanityCheck()
         assert(0 <= weightPointToPoint && weightPointToPoint <= 1);
         assert(0 <= weightPointToPlane && weightPointToPlane <= 1);
         assert(0 <= weightSymmetric && weightSymmetric <= 1);
+    }
+
+    if (runShapeICP)
+    {
+        // Color makes no sense for a bunny example.
+        assert(!useColor);
     }
 }

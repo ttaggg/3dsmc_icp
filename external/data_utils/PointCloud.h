@@ -16,9 +16,14 @@ public:
 
         // Copy vertices.
         m_points.reserve(nVertices);
+        m_colors.reserve(nVertices);
         for (const auto &vertex : vertices)
         {
             m_points.push_back(Vector3f{vertex.position.x(), vertex.position.y(), vertex.position.z()});
+            float r = vertex.color[0] / 255.0f;
+            float g = vertex.color[1] / 255.0f;
+            float b = vertex.color[2] / 255.0f;
+            m_colors.push_back(Vector3f(r, g, b));
         }
 
         // Compute normals (as an average of triangle normals).
@@ -38,7 +43,14 @@ public:
         }
     }
 
-    PointCloud(float *depthMap, const Matrix3f &depthIntrinsics, const Matrix4f &depthExtrinsics, const unsigned width, const unsigned height, unsigned downsampleFactor = 1, float maxDistance = 0.1f)
+    PointCloud(float *depthMap,
+               const Matrix3f &depthIntrinsics,
+               const Matrix4f &depthExtrinsics,
+               const unsigned width,
+               const unsigned height,
+               unsigned char *colorMap,
+               unsigned downsampleFactor = 1,
+               float maxDistance = 0.1f)
     {
         // Get depth intrinsics.
         float fovX = depthIntrinsics(0, 0);
@@ -73,6 +85,24 @@ public:
                     // Back-projection to camera space.
                     pointsTmp[idx] = rotationInv * Vector3f((u - cX) / fovX * depth, (v - cY) / fovY * depth, depth) + translationInv;
                 }
+            }
+        }
+
+        // Save color information.
+        std::vector<Vector3f> colorsTmp(width * height);
+
+        // For every pixel row.
+#pragma omp parallel for
+        for (int v = 0; v < height; ++v)
+        {
+            // For every pixel in a row.
+            for (int u = 0; u < width; ++u)
+            {
+                unsigned int idx = v * width + u; // linearized index
+                float r = colorMap[4 * idx + 0] / 255.0f;
+                float g = colorMap[4 * idx + 1] / 255.0f;
+                float b = colorMap[4 * idx + 2] / 255.0f;
+                colorsTmp[idx] = Vector3f(r, g, b);
             }
         }
 
@@ -125,11 +155,13 @@ public:
         {
             const auto &point = pointsTmp[i];
             const auto &normal = normalsTmp[i];
+            const auto &color = colorsTmp[i];
 
-            if (point.allFinite() && normal.allFinite())
+            if (point.allFinite() && normal.allFinite() && color.allFinite())
             {
                 m_points.push_back(point);
                 m_normals.push_back(normal);
+                m_colors.push_back(color);
             }
         }
     }
@@ -244,4 +276,5 @@ public:
 private:
     std::vector<Vector3f> m_points;
     std::vector<Vector3f> m_normals;
+    std::vector<Vector3f> m_colors;
 };
