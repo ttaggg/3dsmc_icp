@@ -53,6 +53,7 @@ set(SOURCE_FILES
     src/Search.cpp
     src/ProcrustesAligner.cpp
     src/ICPOptimizer.cpp
+    src/ICPConfiguration.cpp
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})

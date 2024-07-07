@@ -176,7 +176,6 @@ int main(int argc, char *argv[])
 	// Load config from file.
 	ICPConfiguration config;
 	config.loadFromYaml(argv[1]);
-	config.sanityCheck();
 	config.show();
 
 	int result = 0;
