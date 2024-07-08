@@ -22,7 +22,7 @@ class ICPOptimizer
 public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
-    void setCorrespondenceMethod(CorrMethod method);
+    void setCorrespondenceMethod(CorrMethod method, bool useColor);
     void usePointToPointConstraints(bool bUsePointToPointConstraints, double weightPointToPointConstraints);
     void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints, double weightPointToPlaneConstraints);
     void useSymmetricConstraints(bool bUseSymmetricConstraints, double weightSymmetricConstraints);
@@ -38,6 +38,7 @@ protected:
     bool m_weightPointToPlaneConstraints;
     bool m_bUseSymmetricConstraints;
     bool m_weightSymmetricConstraints;
+    bool m_useColors;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);

@@ -255,6 +255,16 @@ public:
         return m_normals;
     }
 
+    std::vector<Vector3f> &getColors()
+    {
+        return m_colors;
+    }
+
+    const std::vector<Vector3f> &getColors() const
+    {
+        return m_colors;
+    }
+
     unsigned int getClosestPoint(Vector3f &p)
     {
         unsigned int idx = 0;

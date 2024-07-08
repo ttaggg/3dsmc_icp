@@ -41,7 +41,7 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 		optimizer = new CeresICPOptimizer();
 	}
 
-	optimizer->setCorrespondenceMethod(config.correspondenceMethod);
+	optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
 	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
 	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
 	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
@@ -116,7 +116,7 @@ int reconstructRoom(const ICPConfiguration &config)
 		optimizer = new CeresICPOptimizer();
 	}
 
-	optimizer->setCorrespondenceMethod(config.correspondenceMethod);
+	optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
 	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
 	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
 	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);

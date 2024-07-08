@@ -14,16 +14,17 @@ void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
     m_corrAlgo->setMatchingMaxDistance(maxDistance);
 }
 
-void ICPOptimizer::setCorrespondenceMethod(CorrMethod method)
+void ICPOptimizer::setCorrespondenceMethod(CorrMethod method, bool useColors)
 {
     if (method == ANN)
     {
-        m_corrAlgo = std::make_unique<NearestNeighborSearchFlann>();
+        m_corrAlgo = std::make_unique<NearestNeighborSearch>();
     }
     else if (method == PROJ)
     {
         m_corrAlgo = std::make_unique<ProjectiveCorrespondence>();
     }
+    m_useColors = useColors;
 }
 
 void ICPOptimizer::usePointToPointConstraints(bool bUsePointToPointConstraints,
@@ -89,7 +90,7 @@ void ICPOptimizer::pruneCorrespondences(const std::vector<Vector3f> &sourceNorma
 
     for (unsigned i = 0; i < nPoints; i++)
     {
-        Match &match = matches[i];
+        Match &match = matches.at(i);
         if (match.idx >= 0)
         {
             const auto &sourceNormal = sourceNormals[i];
@@ -113,7 +114,14 @@ CeresICPOptimizer::CeresICPOptimizer() {}
 void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
-    m_corrAlgo->buildIndex(target.getPoints());
+    if (m_useColors)
+    {
+        m_corrAlgo->buildIndex(target.getPoints(), &target.getColors());
+    }
+    else
+    {
+        m_corrAlgo->buildIndex(target.getPoints());
+    }
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
@@ -133,7 +141,16 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
 
-        auto matches = m_corrAlgo->queryMatches(transformedPoints);
+        std::vector<Match> matches;
+        if (m_useColors)
+        {
+            matches = m_corrAlgo->queryMatches(transformedPoints, &source.getColors());
+        }
+        else
+        {
+            matches = m_corrAlgo->queryMatches(transformedPoints);
+        }
+
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
         clock_t end = clock();

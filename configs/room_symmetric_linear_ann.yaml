@@ -6,6 +6,7 @@ useLinearICP: true
 usePointToPlane: true
 # Correspondence method (ANN / PROJ)
 correspondenceMethod: ANN
+useColors: true
 # Other settings
 matchingMaxDistance: 0.1
 nbOfIterations: 10

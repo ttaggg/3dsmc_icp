@@ -51,9 +51,9 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     }
 
     // Whether to use color information.
-    if (config["useColor"])
+    if (config["useColors"])
     {
-        useColor = config["useColor"].as<bool>();
+        useColors = config["useColors"].as<bool>();
     }
 
     // Other setting.
@@ -148,6 +148,7 @@ void ICPConfiguration::show()
     {
         std::cout << "correspondenceMethod: PROJ" << std::endl;
     }
+    std::cout << "useColors: " << useColors << std::endl;
 
     std::cout << "====== Other settings ======" << std::endl;
     std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
@@ -161,29 +162,24 @@ void ICPConfiguration::show()
 void ICPConfiguration::_sanityCheck()
 {
 
-    // Check if at least one task is defined.
-    assert(runShapeICP || runSequenceICP);
+    assert(runShapeICP || runSequenceICP && "At least one task should be set to true.");
 
-    // Check if the number of objective makes sence.
     if (useLinearICP)
     {
-        // For linearized we do not combine several methods now.
-        assert(usePointToPoint + usePointToPlane + useSymmetric == 1);
-        // Weight are defaults (1.) for linearized ICP.
-        assert(weightPointToPoint == weightPointToPlane == weightSymmetric == 1);
+        assert(usePointToPoint + usePointToPlane + useSymmetric == 1 && "For linearized ICP we do not combine several methods.");
+        assert(weightPointToPoint == weightPointToPlane == weightSymmetric == 1 && "Weight should not be set for a linearized ICP.");
     }
     else
     {
-        assert(usePointToPoint + usePointToPlane + useSymmetric > 0);
-        assert(weightPointToPoint + weightPointToPlane + weightSymmetric > 0);
-        assert(0 <= weightPointToPoint && weightPointToPoint <= 1);
-        assert(0 <= weightPointToPlane && weightPointToPlane <= 1);
-        assert(0 <= weightSymmetric && weightSymmetric <= 1);
+        assert(usePointToPoint + usePointToPlane + useSymmetric > 0 && "At least one objective should be set to true.");
+        assert(weightPointToPoint + weightPointToPlane + weightSymmetric > 0 && "At least one objective weight should be nonzero.");
+        assert(0 <= weightPointToPoint && weightPointToPoint <= 1 && "weightPointToPoint should be in [0, 1].");
+        assert(0 <= weightPointToPlane && weightPointToPlane <= 1 && "weightPointToPlane should be in [0, 1].");
+        assert(0 <= weightSymmetric && weightSymmetric <= 1 && "weightSymmetric should be in [0, 1].");
     }
 
     if (runShapeICP)
     {
-        // Color makes no sense for a bunny example.
-        assert(!useColor);
+        assert(!useColors && "Color makes no sense for a bunny example.");
     }
 }
