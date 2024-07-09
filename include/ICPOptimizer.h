@@ -38,7 +38,6 @@ protected:
     bool m_weightPointToPlaneConstraints;
     bool m_bUseSymmetricConstraints;
     bool m_weightSymmetricConstraints;
-    bool m_useColors;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);

@@ -1,11 +1,11 @@
 # Task
 runSequenceICP: true
 # ICP type
-useLinearICP: true
+useLinearICP: false
 # ICP objective(s)
-usePointToPlane: true
-# Correspondence method (ANN / PROJ)
-correspondenceMethod: ANN
+useSymmetric: true
+# Correspondence method (NN / SHOOT)
+correspondenceMethod: NN
 useColors: true
 # Other settings
 matchingMaxDistance: 0.1

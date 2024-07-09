@@ -4,8 +4,8 @@ runShapeICP: true
 useLinearICP: true
 # ICP objective(s)
 usePointToPlane: true
-# Correspondence method (ANN / PROJ)
-correspondenceMethod: ANN
+# Correspondence method (NN / SHOOT)
+correspondenceMethod: NN
 # Other settings
 matchingMaxDistance: 0.0003
 nbOfIterations: 20

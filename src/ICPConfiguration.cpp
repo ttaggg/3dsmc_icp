@@ -70,13 +70,13 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     if (config["correspondenceMethod"])
     {
         std::string method = config["correspondenceMethod"].as<std::string>();
-        if (method == "ANN")
+        if (method == "NN")
         {
-            correspondenceMethod = ANN;
+            correspondenceMethod = NN;
         }
-        else if (method == "PROJ")
+        else if (method == "SHOOT")
         {
-            correspondenceMethod = PROJ;
+            correspondenceMethod = SHOOT;
         }
         else
         {
@@ -140,13 +140,13 @@ void ICPConfiguration::show()
     }
 
     std::cout << "====== Correspondence ======" << std::endl;
-    if (correspondenceMethod == ANN)
+    if (correspondenceMethod == NN)
     {
-        std::cout << "correspondenceMethod: ANN" << std::endl;
+        std::cout << "correspondenceMethod: Nearest Neighbors" << std::endl;
     }
-    else if (correspondenceMethod == PROJ)
+    else if (correspondenceMethod == SHOOT)
     {
-        std::cout << "correspondenceMethod: PROJ" << std::endl;
+        std::cout << "correspondenceMethod: Normal Shoot" << std::endl;
     }
     std::cout << "useColors: " << useColors << std::endl;
 
@@ -178,8 +178,9 @@ void ICPConfiguration::_sanityCheck()
         assert(0 <= weightSymmetric && weightSymmetric <= 1 && "weightSymmetric should be in [0, 1].");
     }
 
-    if (runShapeICP)
+    if (useColors)
     {
-        assert(!useColors && "Color makes no sense for a bunny example.");
+        assert(!runShapeICP && "Color makes no sense for a bunny example.");
+        assert(correspondenceMethod != SHOOT && "Color is not supported for normal shoot.");
     }
 }

@@ -30,14 +30,10 @@ NearestNeighborSearch::~NearestNeighborSearch()
 }
 
 void NearestNeighborSearch::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-                                       const std::vector<Eigen::Vector3f> *targetColors)
+                                       const std::vector<Eigen::Vector3f> *targetColors,
+                                       const std::vector<Eigen::Vector3f> *targetNormals)
 {
     std::cout << "Initializing FLANN index with " << targetPoints.size() << " points." << std::endl;
-
-    if (targetColors != nullptr)
-    { // TODO(oleg): this logic is studip, maybe make a separate search methods for color.
-        return _buildIndexWithColor(targetPoints, *targetColors);
-    }
 
     // FLANN requires that all the points be flat. Therefore we copy the points to a separate flat array.
     m_flatPoints = new float[targetPoints.size() * 3];
@@ -58,18 +54,14 @@ void NearestNeighborSearch::buildIndex(const std::vector<Eigen::Vector3f> &targe
     std::cout << "FLANN index created." << std::endl;
 }
 
-std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3f> &transformedPoints,
-                                                       const std::vector<Eigen::Vector3f> *transformedColors)
+std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints,
+                                                       const std::vector<Eigen::Vector3f> *transformedColors,
+                                                       const std::vector<Eigen::Vector3f> *transformedNormals)
 {
     if (!m_index)
     {
         std::cout << "FLANN index needs to be build before querying any matches." << std::endl;
         return {};
-    }
-
-    if (transformedColors != nullptr)
-    {
-        return _queryMatchesWithColor(transformedPoints, *transformedColors);
     }
 
     // FLANN requires that all the points be flat. Therefore we copy the points to a separate flat array.
@@ -115,8 +107,9 @@ std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3
 /**
  * Nearest neighbor search using FLANN with color information.
  */
-void NearestNeighborSearch::_buildIndexWithColor(const std::vector<Eigen::Vector3f> &targetPoints,
-                                                 const std::vector<Eigen::Vector3f> &targetColors)
+void NearestNeighborSearchWithColors::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
+                                                 const std::vector<Eigen::Vector3f> &targetColors,
+                                                 const std::vector<Eigen::Vector3f> &targetNormals)
 {
     // Assuming targetColors.size() == targetPoints.size()
     m_flatPoints = new float[targetPoints.size() * 6];
@@ -135,8 +128,9 @@ void NearestNeighborSearch::_buildIndexWithColor(const std::vector<Eigen::Vector
     std::cout << "FLANN index with color created." << std::endl;
 }
 
-std::vector<Match> NearestNeighborSearch::_queryMatchesWithColor(const std::vector<Eigen::Vector3f> &transformedPoints,
-                                                                 const std::vector<Eigen::Vector3f> &transformedColors)
+std::vector<Match> NearestNeighborSearchWithColors::queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints,
+                                                                 const std::vector<Eigen::Vector3f> &transformedColors,
+                                                                 const std::vector<Eigen::Vector3f> &transformedNormals)
 {
     // Assuming transformedColors.size() == transformedPoints.size()
     float *queryPoints = new float[transformedPoints.size() * 6];
@@ -177,64 +171,141 @@ std::vector<Match> NearestNeighborSearch::_queryMatchesWithColor(const std::vect
 }
 
 /**
- * Projective correspondence.
+ * Normal shoot correspondence.
  */
 
-ProjectiveCorrespondence::ProjectiveCorrespondence() : Search(), m_maxDistance{0.005f} {}
+NormalShootCorrespondence::NormalShootCorrespondence()
+    : Search(),
+      m_nTrees{1},
+      m_index{nullptr},
+      m_flatPoints{nullptr} {}
 
-ProjectiveCorrespondence::~ProjectiveCorrespondence() {}
-
-void ProjectiveCorrespondence::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-                                          const std::vector<Eigen::Vector3f> *targetColors)
+NormalShootCorrespondence::~NormalShootCorrespondence()
 {
-    m_targetPoints = targetPoints;
-    if (targetColors)
+    if (m_flatPoints)
     {
-        m_targetColors = *targetColors;
+        delete[] m_flatPoints;
+    }
+    if (m_index)
+    {
+        delete m_index;
     }
 }
 
-std::vector<Match> ProjectiveCorrespondence::queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints,
-                                                          const std::vector<Eigen::Vector3f> *transformedColors)
+void NormalShootCorrespondence::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
+                                           const std::vector<Eigen::Vector3f> *targetColors,
+                                           const std::vector<Eigen::Vector3f> *targetNormals)
 {
-    std::vector<Match> matches;
-    matches.reserve(transformedPoints.size());
+    return _buildIndex(targetPoints, *targetColors, *targetNormals);
+}
 
-#pragma omp parallel for
-    for (size_t i = 0; i < transformedPoints.size(); ++i)
+void NormalShootCorrespondence::_buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
+                                            const std::vector<Eigen::Vector3f> &targetColors,
+                                            const std::vector<Eigen::Vector3f> &targetNormals)
+{
+    std::cout << "Initializing FLANN index with " << targetPoints.size() << " points." << std::endl;
+
+    m_flatPoints = new float[targetPoints.size() * 3];
+    for (size_t pointIndex = 0; pointIndex < targetPoints.size(); pointIndex++)
     {
-        const auto &transformedPoint = transformedPoints[i];
-        const Eigen::Vector3f *transformedColor = transformedColors ? &(*transformedColors)[i] : nullptr;
-
-        float minDistance = std::numeric_limits<float>::max();
-        int bestMatch = -1;
-
-        for (size_t j = 0; j < m_targetPoints.size(); ++j)
+        for (size_t dim = 0; dim < 3; dim++)
         {
-            float distance = (transformedPoint - m_targetPoints[j]).norm();
-
-            if (transformedColor && !m_targetColors.empty())
-            {
-                float colorDistance = ((*transformedColor) - m_targetColors[j]).norm();
-                distance = 0.5 * distance + 0.5 * colorDistance; // Combine distances with dummy weights for now.
-            }
-
-            if (distance < minDistance && distance <= m_maxDistance)
-            {
-                minDistance = distance;
-                bestMatch = static_cast<int>(j);
-            }
+            m_flatPoints[pointIndex * 3 + dim] = targetPoints[pointIndex][dim];
         }
+    }
 
-        if (bestMatch != -1)
+    flann::Matrix<float> dataset(m_flatPoints, targetPoints.size(), 3);
+
+    m_index = new flann::Index<flann::L2<float>>(dataset, flann::KDTreeIndexParams(m_nTrees));
+    m_index->buildIndex();
+
+    std::cout << "FLANN index created." << std::endl;
+}
+
+std::vector<Match> NormalShootCorrespondence::queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                           const std::vector<Vector3f> *transformedColors,
+                                                           const std::vector<Vector3f> *transformedNormals)
+{
+    return _queryMatches(transformedPoints, *transformedColors, *transformedNormals);
+}
+
+std::vector<Match> NormalShootCorrespondence::_queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                            const std::vector<Vector3f> &transformedColors,
+                                                            const std::vector<Vector3f> &transformedNormals)
+{
+    if (!m_index)
+    {
+        std::cout << "FLANN index needs to be built before querying any matches." << std::endl;
+        return {};
+    }
+
+    std::vector<Match> matches;
+    for (int idx = 0; idx < transformedPoints.size(); ++idx)
+    {
+        auto point = transformedPoints.at(idx);
+        auto normal = transformedNormals.at(idx);
+        Eigen::Vector3f intersection;
+        if (findRayIntersection(point, normal, intersection))
         {
-            matches.push_back(Match{bestMatch, 1.f});
+            int matched_index = findNearestNeighbor(intersection);
+            matches.push_back(Match{matched_index, 1.});
         }
         else
         {
-            matches.push_back(Match{-1, 0.f});
+            matches.push_back(Match{-1, 0.});
         }
     }
 
     return matches;
+}
+
+bool NormalShootCorrespondence::findRayIntersection(const Eigen::Vector3f &origin, const Eigen::Vector3f &direction, Eigen::Vector3f &intersection)
+{
+    float queryPoint[3] = {origin.x(), origin.y(), origin.z()};
+    flann::Matrix<float> query(queryPoint, 1, 3);
+    flann::Matrix<int> indices(new int[1], 1, 1);
+    flann::Matrix<float> distances(new float[1], 1, 1);
+
+    flann::SearchParams searchParams{16};
+    searchParams.cores = 0;
+    m_index->knnSearch(query, indices, distances, 1, searchParams);
+
+    if (distances[0][0] <= m_maxDistance)
+    {
+        Eigen::Vector3f nearestPoint(
+            m_flatPoints[indices[0][0] * 3],
+            m_flatPoints[indices[0][0] * 3 + 1],
+            m_flatPoints[indices[0][0] * 3 + 2]);
+
+        Eigen::Vector3f vec = nearestPoint - origin;
+        float t = vec.dot(direction) / direction.dot(direction);
+        intersection = origin + t * direction;
+
+        delete[] indices.ptr();
+        delete[] distances.ptr();
+        return true;
+    }
+
+    delete[] indices.ptr();
+    delete[] distances.ptr();
+    return false;
+}
+
+int NormalShootCorrespondence::findNearestNeighbor(const Eigen::Vector3f &point)
+{
+    float queryPoint[3] = {point.x(), point.y(), point.z()};
+    flann::Matrix<float> query(queryPoint, 1, 3);
+    flann::Matrix<int> indices(new int[1], 1, 1);
+    flann::Matrix<float> distances(new float[1], 1, 1);
+
+    flann::SearchParams searchParams{16};
+    searchParams.cores = 0;
+    m_index->knnSearch(query, indices, distances, 1, searchParams);
+
+    int nearestIndex = indices[0][0];
+
+    delete[] indices.ptr();
+    delete[] distances.ptr();
+
+    return nearestIndex;
 }

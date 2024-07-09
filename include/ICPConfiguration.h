@@ -5,8 +5,8 @@
  */
 enum CorrMethod
 {
-    ANN,
-    PROJ,
+    NN,
+    SHOOT,
 };
 
 /**
@@ -29,8 +29,8 @@ public:
     double weightSymmetric = 1.;
     // Whether to use color information.
     bool useColors = false;
-    // Correspondence method (ANN / PROJ)
-    CorrMethod correspondenceMethod = ANN;
+    // Correspondence method (NN / SHOOT)
+    CorrMethod correspondenceMethod = NN;
     // Other settings
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;

@@ -7,8 +7,8 @@ useSymmetric: true
 weightSymmetric: 1.0
 usePointToPlane: true
 weightPointToPlane: 0.5
-# Correspondence method (ANN / PROJ)
-correspondenceMethod: ANN
+# Correspondence method (NN / SHOOT)
+correspondenceMethod: NN
 # Other settings
 matchingMaxDistance: 0.0003
 nbOfIterations: 20

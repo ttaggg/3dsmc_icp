@@ -153,7 +153,7 @@ int reconstructRoom(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		if (i % 5 == 0)
+		if (i % 3 == 0)
 		{
 			// We write out the mesh to file for debugging.
 			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
