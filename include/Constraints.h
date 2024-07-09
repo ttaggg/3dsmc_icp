@@ -59,6 +59,57 @@ public:
         outputPoint[2] = temp[2] + translation[2];
     }
 
+    void apply_inverse_rotation(T *inputPoint, T *outputPoint) const
+    {
+        // for symmetric no translation
+
+        const T *rotation = m_array;
+        T inverse_rotation[3];
+        inverse_rotation[0] = -rotation[0];
+        inverse_rotation[1] = -rotation[1];
+        inverse_rotation[2] = -rotation[2];
+
+        T temp[3];
+        ceres::AngleAxisRotatePoint(inverse_rotation, inputPoint, temp);
+
+        outputPoint[0] = temp[0];
+        outputPoint[1] = temp[1];
+        outputPoint[2] = temp[2];
+    }
+
+    static Matrix4f convertToRTRMatrix(const PoseIncrement<double> &poseIncrement)
+    {
+        // pose[0,1,2] is angle-axis rotation.
+        // pose[3,4,5] is translation.
+        double *pose = poseIncrement.getData();
+        double *rotation = pose;
+        double *translation = pose + 3;
+
+        // Convert the rotation from SO3 to matrix notation (with column-major storage).
+        double rotationMatrix[9];
+        ceres::AngleAxisToRotationMatrix(rotation, rotationMatrix);
+
+        // Create the 4x4 transformation matrix.
+        Matrix4f Trans;
+        Trans.setIdentity();
+        Trans(0, 3) = float(translation[0]);
+        Trans(1, 3) = float(translation[1]);
+        Trans(2, 3) = float(translation[2]);
+
+        Matrix4f R;
+        R.setIdentity();
+        R(0, 0) = float(rotationMatrix[0]);
+        R(0, 1) = float(rotationMatrix[3]);
+        R(0, 2) = float(rotationMatrix[6]);
+        R(1, 0) = float(rotationMatrix[1]);
+        R(1, 1) = float(rotationMatrix[4]);
+        R(1, 2) = float(rotationMatrix[7]);
+        R(2, 0) = float(rotationMatrix[2]);
+        R(2, 1) = float(rotationMatrix[5]);
+        R(2, 2) = float(rotationMatrix[8]);
+
+        return R * Trans * R;
+    }
     /**
      * Converts the pose increment with rotation in SO3 notation and translation as 3D vector into
      * transformation 4x4 matrix.
@@ -171,7 +222,9 @@ public:
         T newSourse[3];
         poseIncrement.apply(source, newSourse);
 
-        residuals[0] = T(m_weight) * (normal[0] * (target[0] - newSourse[0]) + normal[1] * (target[1] - newSourse[1]) + normal[2] * (target[2] - newSourse[2]));
+        residuals[0] = T(m_weight) * (normal[0] * (newSourse[0] - target[0]) +
+                                      normal[1] * (newSourse[1] - target[1]) +
+                                      normal[2] * (newSourse[2] - target[2]));
 
         return true;
     }
@@ -224,14 +277,18 @@ public:
         T newSource[3];
         poseIncrement.apply(source, newSource);
 
+        T newTarget[3];
+        poseIncrement.apply_inverse_rotation(target, newTarget);
+
+        // Simplified example from the paper, do not rotate normals.
         T normalSum[3] = {
             sourceNormal[0] + targetNormal[0],
             sourceNormal[1] + targetNormal[1],
             sourceNormal[2] + targetNormal[2]};
 
-        residuals[0] = T(m_weight) * (normalSum[0] * (newSource[0] - target[0]) +
-                                      normalSum[1] * (newSource[1] - target[1]) +
-                                      normalSum[2] * (newSource[2] - target[2]));
+        residuals[0] = T(m_weight) * (normalSum[0] * (newSource[0] - newTarget[0]) +
+                                      normalSum[1] * (newSource[1] - newTarget[1]) +
+                                      normalSum[2] * (newSource[2] - newTarget[2]));
 
         return true;
     }

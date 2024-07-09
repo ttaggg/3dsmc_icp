@@ -176,6 +176,9 @@ void ICPConfiguration::_sanityCheck()
         assert(0 <= weightPointToPoint && weightPointToPoint <= 1 && "weightPointToPoint should be in [0, 1].");
         assert(0 <= weightPointToPlane && weightPointToPlane <= 1 && "weightPointToPlane should be in [0, 1].");
         assert(0 <= weightSymmetric && weightSymmetric <= 1 && "weightSymmetric should be in [0, 1].");
+
+        // temp restriction due to a uncertainty in symmetric icp implementation
+        assert(usePointToPoint + usePointToPlane + useSymmetric == 1 && "For linearized ICP we do not combine several methods.");
     }
 
     if (useColors)

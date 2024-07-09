@@ -149,7 +149,13 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
 
         // Prepare point-to-point and point-to-plane constraints.
         ceres::Problem problem;
-        prepareConstraints(transformedPoints, target.getPoints(), source.getNormals(), target.getNormals(), matches, poseIncrement, problem);
+        prepareConstraints(transformedPoints,
+                           target.getPoints(),
+                           transformedNormals,
+                           target.getNormals(),
+                           matches,
+                           poseIncrement,
+                           problem);
 
         // Configure options for the solver.
         ceres::Solver::Options options;
@@ -162,8 +168,16 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         // std::cout << summary.FullReport() << std::endl;
 
         // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
-        Matrix4f matrix = PoseIncrement<double>::convertToMatrix(poseIncrement);
-        estimatedPose = PoseIncrement<double>::convertToMatrix(poseIncrement) * estimatedPose;
+        Matrix4f matrix;
+        if (m_bUseSymmetricConstraints)
+        {
+            matrix = PoseIncrement<double>::convertToRTRMatrix(poseIncrement);
+        }
+        else
+        {
+            matrix = PoseIncrement<double>::convertToMatrix(poseIncrement);
+        }
+        estimatedPose = matrix * estimatedPose;
         poseIncrement.setZero();
 
         std::cout << "Optimization iteration done." << std::endl;
@@ -226,8 +240,8 @@ void CeresICPOptimizer::
 
             if (m_bUseSymmetricConstraints)
             {
-                const auto &targetNormal = targetNormals[match.idx];
-                const auto &sourceNormal = sourceNormals[match.idx];
+                const auto &targetNormal = targetNormals.at(match.idx);
+                const auto &sourceNormal = sourceNormals[i];
 
                 if (!targetNormal.allFinite() || !sourceNormal.allFinite())
                     continue;

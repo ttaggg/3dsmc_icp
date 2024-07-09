@@ -123,13 +123,9 @@ public:
                     normalsTmp[idx] = Vector3f(MINF, MINF, MINF);
                     continue;
                 }
-
                 auto lhs = pointsTmp[idx + 1] - pointsTmp[idx - 1];
-                auto lhs_norm = lhs.normalized();
                 auto rhs = pointsTmp[idx + width] - pointsTmp[idx - width];
-                auto rhs_norm = rhs.normalized();
-
-                normalsTmp[idx] = lhs_norm.cross(rhs_norm);
+                normalsTmp[idx] = -(lhs.cross(rhs));
                 normalsTmp[idx].normalize();
             }
         }
