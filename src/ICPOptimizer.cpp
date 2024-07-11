@@ -14,21 +14,44 @@ void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
     m_corrAlgo->setMatchingMaxDistance(maxDistance);
 }
 
-void ICPOptimizer::setCorrespondenceMethod(CorrMethod method)
+void ICPOptimizer::setCorrespondenceMethod(CorrMethod method, bool useColors)
 {
-    if (method == ANN)
+    if (method == NN)
     {
-        m_corrAlgo = std::make_unique<NearestNeighborSearchFlann>();
+        if (useColors)
+        {
+            m_corrAlgo = std::make_unique<NearestNeighborSearchWithColors>();
+        }
+        else
+        {
+            m_corrAlgo = std::make_unique<NearestNeighborSearch>();
+        }
     }
-    else if (method == PROJ)
+    else if (method == SHOOT)
     {
-        m_corrAlgo = std::make_unique<ProjectiveCorrespondence>();
+        m_corrAlgo = std::make_unique<NormalShootCorrespondence>();
     }
 }
 
-void ICPOptimizer::usePointToPlaneConstraints(bool bUsePointToPlaneConstraints)
+void ICPOptimizer::usePointToPointConstraints(bool bUsePointToPointConstraints,
+                                              double weightPointToPointConstraints)
+{
+    m_bUsePointToPointConstraints = bUsePointToPointConstraints;
+    m_weightPointToPointConstraints = weightPointToPointConstraints;
+}
+
+void ICPOptimizer::usePointToPlaneConstraints(bool bUsePointToPlaneConstraints,
+                                              double weightPointToPlaneConstraints)
 {
     m_bUsePointToPlaneConstraints = bUsePointToPlaneConstraints;
+    m_weightPointToPlaneConstraints = weightPointToPlaneConstraints;
+}
+
+void ICPOptimizer::useSymmetricConstraints(bool bUseSymmetricConstraints,
+                                           double weightSymmetricConstraints)
+{
+    m_bUseSymmetricConstraints = bUseSymmetricConstraints;
+    m_weightSymmetricConstraints = weightSymmetricConstraints;
 }
 
 void ICPOptimizer::setNbOfIterations(unsigned nIterations)
@@ -73,7 +96,7 @@ void ICPOptimizer::pruneCorrespondences(const std::vector<Vector3f> &sourceNorma
 
     for (unsigned i = 0; i < nPoints; i++)
     {
-        Match &match = matches[i];
+        Match &match = matches.at(i);
         if (match.idx >= 0)
         {
             const auto &sourceNormal = sourceNormals[i];
@@ -166,7 +189,7 @@ CeresICPOptimizer::CeresICPOptimizer() {}
 void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
-    m_corrAlgo->buildIndex(target.getPoints());
+    m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
@@ -180,13 +203,13 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
     for (int i = 0; i < m_nIterations; ++i)
     {
         // Compute the matches.
-        std::cout << "Matching points ..." << std::endl;
         clock_t begin = clock();
-
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
 
-        auto matches = m_corrAlgo->queryMatches(transformedPoints);
+        std::vector<Match> matches = m_corrAlgo->queryMatches(transformedPoints,
+                                                              &source.getColors(),
+                                                              &transformedNormals);
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
         clock_t end = clock();
@@ -195,7 +218,13 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
 
         // Prepare point-to-point and point-to-plane constraints.
         ceres::Problem problem;
-        prepareConstraints(transformedPoints, target.getPoints(), target.getNormals(), matches, poseIncrement, problem);
+        prepareConstraints(transformedPoints,
+                           target.getPoints(),
+                           transformedNormals,
+                           target.getNormals(),
+                           matches,
+                           poseIncrement,
+                           problem);
 
         // Configure options for the solver.
         ceres::Solver::Options options;
@@ -208,8 +237,16 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         std::cout << summary.FullReport() << std::endl;
 
         // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
-        Matrix4f matrix = PoseIncrement<double>::convertToMatrix(poseIncrement);
-        estimatedPose = PoseIncrement<double>::convertToMatrix(poseIncrement) * estimatedPose;
+        Matrix4f matrix;
+        if (m_bUseSymmetricConstraints)
+        {
+            matrix = PoseIncrement<double>::convertToRTRMatrix(poseIncrement);
+        }
+        else
+        {
+            matrix = PoseIncrement<double>::convertToMatrix(poseIncrement);
+        }
+        estimatedPose = matrix * estimatedPose;
         poseIncrement.setZero();
 
         std::cout << "Optimization iteration done." << std::endl;
@@ -236,7 +273,9 @@ void CeresICPOptimizer::configureSolver(ceres::Solver::Options &options)
 }
 
 void CeresICPOptimizer::
-    CeresICPOptimizer::prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const
+    CeresICPOptimizer::prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints,
+                                          const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals,
+                                          const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const
 {
     const unsigned nPoints = sourcePoints.size();
 
@@ -248,12 +287,16 @@ void CeresICPOptimizer::
             const auto &sourcePoint = sourcePoints[i];
             const auto &targetPoint = targetPoints[match.idx];
 
-            if (!sourcePoint.allFinite() || !targetPoint.allFinite())
-                continue;
+            if (m_bUsePointToPointConstraints)
+            {
+                if (!sourcePoint.allFinite() || !targetPoint.allFinite())
+                    continue;
 
-            const double &weight = 1.0;
-            ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint, targetPoint, weight);
-            problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+                ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint,
+                                                                                    targetPoint,
+                                                                                    m_weightPointToPointConstraints);
+                problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+            }
 
             if (m_bUsePointToPlaneConstraints)
             {
@@ -262,8 +305,26 @@ void CeresICPOptimizer::
                 if (!targetNormal.allFinite())
                     continue;
 
-                const double &weight = 1.0;
-                ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint, targetPoint, targetNormal, weight);
+                ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint,
+                                                                                    targetPoint,
+                                                                                    targetNormal,
+                                                                                    m_weightPointToPlaneConstraints);
+                problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
+            }
+
+            if (m_bUseSymmetricConstraints)
+            {
+                const auto &targetNormal = targetNormals.at(match.idx);
+                const auto &sourceNormal = sourceNormals[i];
+
+                if (!targetNormal.allFinite() || !sourceNormal.allFinite())
+                    continue;
+
+                ceres::CostFunction *cost_function = SymmetricConstraint::create(sourcePoint,
+                                                                                 targetPoint,
+                                                                                 sourceNormal,
+                                                                                 targetNormal,
+                                                                                 m_weightSymmetricConstraints);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
         }
@@ -347,7 +408,7 @@ LinearICPOptimizer::LinearICPOptimizer() {}
 void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
-    m_corrAlgo->buildIndex(target.getPoints());
+    m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
@@ -361,7 +422,9 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
 
-        auto matches = m_corrAlgo->queryMatches(transformedPoints);
+        std::vector<Match> matches = m_corrAlgo->queryMatches(transformedPoints,
+                                                              &source.getColors(),
+                                                              &transformedNormals);
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
         clock_t end = clock();
@@ -385,13 +448,22 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         }
 
         // Estimate the new pose
-        if (m_bUsePointToPlaneConstraints)
+        if (m_bUsePointToPointConstraints)
+        {
+            estimatedPose = estimatePosePointToPoint(sourcePoints, targetPoints) * estimatedPose;
+        }
+        else if (m_bUsePointToPlaneConstraints)
         {
             estimatedPose = estimatePosePointToPlane(sourcePoints, targetPoints, target.getNormals()) * estimatedPose;
         }
+        else if (m_bUseSymmetricConstraints)
+        {
+            estimatedPose = estimatePoseSymmetric(sourcePoints, targetPoints, source.getNormals(), target.getNormals()) * estimatedPose;
+        }
         else
         {
-            estimatedPose = estimatePosePointToPoint(sourcePoints, targetPoints) * estimatedPose;
+            std::cout << "Flags for all methods are set to false." << std::endl;
+            exit(1);
         }
 
         std::cout << "Optimization iteration done." << std::endl;
@@ -405,7 +477,8 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
     initialPose = estimatedPose;
 }
 
-Matrix4f LinearICPOptimizer::estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints)
+Matrix4f LinearICPOptimizer::estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,
+                                                      const std::vector<Vector3f> &targetPoints)
 {
     ProcrustesAligner procrustAligner;
     Matrix4f estimatedPose = procrustAligner.estimatePose(sourcePoints, targetPoints);
@@ -414,7 +487,9 @@ Matrix4f LinearICPOptimizer::estimatePosePointToPoint(const std::vector<Vector3f
 }
 
 Matrix4f LinearICPOptimizer::
-    LinearICPOptimizer::estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals)
+    LinearICPOptimizer::estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints,
+                                                 const std::vector<Vector3f> &targetPoints,
+                                                 const std::vector<Vector3f> &targetNormals)
 {
     const unsigned nPoints = sourcePoints.size();
 
@@ -529,4 +604,62 @@ double LinearICPOptimizer::PointToPlaneComputeRMSE(
         err += r * r;
     }
     return std::sqrt(err / (double)corres.size());
+}
+Matrix4f LinearICPOptimizer::estimatePoseSymmetric(const std::vector<Vector3f> &sourcePoints,
+                                                   const std::vector<Vector3f> &targetPoints,
+                                                   const std::vector<Vector3f> &sourceNormals,
+                                                   const std::vector<Vector3f> &targetNormals)
+{
+    const unsigned nPoints = sourcePoints.size();
+
+    // Build the system
+    MatrixXf A = MatrixXf::Zero(4 * nPoints, 6);
+    VectorXf b = VectorXf::Zero(4 * nPoints);
+
+    for (unsigned i = 0; i < nPoints; i++)
+    {
+        const auto &s = sourcePoints[i];
+        const auto &d = targetPoints[i];
+        const auto &ns = sourceNormals[i];
+        const auto &nt = targetNormals[i];
+
+        Matrix3f cross_s;
+        cross_s << 0., -s.z(), s.y(),
+            s.z(), 0, -s.x(),
+            -s.y(), s.x(), 0;
+
+        Matrix3f cross_d;
+        cross_d << 0., -d.z(), d.y(),
+            d.z(), 0, -d.x(),
+            -d.y(), d.x(), 0;
+
+        auto diff = d - s;
+        Vector3f normalSum = ns + nt;
+
+        A.block(4 * i, 0, 3, 3) = -cross_s;
+        A.block(4 * i, 3, 3, 3) = Matrix3f::Identity();
+        b.segment(4 * i, 3) = diff;
+
+        A.block(4 * i + 3, 0, 1, 3) = normalSum.transpose() * (-cross_s + cross_d);
+        A.block(4 * i + 3, 3, 1, 3) = normalSum.transpose();
+        b(4 * i + 3) = normalSum.transpose() * diff;
+    }
+
+    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+    VectorXf x = cod.solve(b);
+
+    float alpha = x(0), beta = x(1), gamma = x(2);
+
+    // Build the pose matrix
+    Matrix3f rotation = AngleAxisf(alpha, Vector3f::UnitX()).toRotationMatrix() *
+                        AngleAxisf(beta, Vector3f::UnitY()).toRotationMatrix() *
+                        AngleAxisf(gamma, Vector3f::UnitZ()).toRotationMatrix();
+
+    Vector3f translation = x.tail(3);
+
+    Matrix4f estimatedPose = Matrix4f::Identity();
+    estimatedPose.block(0, 0, 3, 3) = rotation;
+    estimatedPose.block(0, 3, 3, 1) = translation;
+
+    return estimatedPose;
 }

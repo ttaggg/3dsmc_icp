@@ -6,21 +6,10 @@
 #include "VirtualSensor.h"
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
+#include "ICPConfiguration.h"
 #include "PointCloud.h"
 
-#define SHOW_BUNNY_CORRESPONDENCES 1
-
-#define USE_POINT_TO_PLANE 0
-#define USE_LINEAR_ICP 1
-
-#define USE_PROJ_CORRESPONDENCE 0
-
-#define RUN_SHAPE_ICP 1
-#define RUN_SEQUENCE_ICP 0
-
-#define NUM_ITERATION 20
-
-int alignBunnyWithICP()
+int alignBunnyWithICP(const ICPConfiguration &config)
 {
 	// Load the source and target mesh.
 
@@ -47,7 +36,7 @@ int alignBunnyWithICP()
 
 	// Estimate the pose from source to target mesh with ICP optimization.
 	ICPOptimizer *optimizer = nullptr;
-	if (USE_LINEAR_ICP)
+	if (config.useLinearICP)
 	{
 		optimizer = new LinearICPOptimizer();
 	}
@@ -56,28 +45,13 @@ int alignBunnyWithICP()
 		optimizer = new CeresICPOptimizer();
 	}
 
-	if (USE_PROJ_CORRESPONDENCE)
-	{
-		optimizer->setCorrespondenceMethod(PROJ);
-	}
-	else
-	{
-		optimizer->setCorrespondenceMethod(ANN);
-	}
+	optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
+	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
+	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
+	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
+	optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
+	optimizer->setNbOfIterations(config.nbOfIterations);
 
-	optimizer->setMatchingMaxDistance(0.0003f);
-	if (USE_POINT_TO_PLANE)
-	{
-		optimizer->usePointToPlaneConstraints(true);
-		optimizer->setNbOfIterations(10);
-		
-	}
-	else
-	{
-		optimizer->usePointToPlaneConstraints(false);
-		optimizer->setNbOfIterations(20);
-	}
-	
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
 
@@ -87,17 +61,6 @@ int alignBunnyWithICP()
 	
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-	if (SHOW_BUNNY_CORRESPONDENCES)
-	{
-		for (const auto &sourcePoint : source.getPoints())
-		{
-			resultingMesh = SimpleMesh::joinMeshes(SimpleMesh::sphere(sourcePoint, 0.001f), resultingMesh, estimatedPose);
-		}
-		for (const auto &targetPoint : target.getPoints())
-		{
-			resultingMesh = SimpleMesh::joinMeshes(SimpleMesh::sphere(targetPoint, 0.001f, Vector4uc(255, 255, 255, 255)), resultingMesh, Matrix4f::Identity());
-		}
-	}
 	resultingMesh.writeMesh(filenameOutput);
 	std::cout << "Resulting mesh written." << std::endl;
 	
@@ -123,7 +86,7 @@ int alignBunnyWithICP()
 	return 0;
 }
 
-int reconstructRoom()
+int reconstructRoom(const ICPConfiguration &config)
 {
 	std::string filenameIn = std::string("../../Data/rgbd_dataset_freiburg1_xyz/");
 	std::string filenameBaseOut = std::string("mesh_");
@@ -139,11 +102,18 @@ int reconstructRoom()
 
 	// We store a first frame as a reference frame. All next frames are tracked relatively to the first frame.
 	sensor.processNextFrame();
-	PointCloud target{sensor.getDepth(), sensor.getDepthIntrinsics(), sensor.getDepthExtrinsics(), sensor.getDepthImageWidth(), sensor.getDepthImageHeight()};
+	PointCloud target{
+		sensor.getDepth(),
+		sensor.getDepthIntrinsics(),
+		sensor.getDepthExtrinsics(),
+		sensor.getDepthImageWidth(),
+		sensor.getDepthImageHeight(),
+		sensor.getColorRGBX(),
+	};
 
 	// Setup the optimizer.
 	ICPOptimizer *optimizer = nullptr;
-	if (USE_LINEAR_ICP)
+	if (config.useLinearICP)
 	{
 		optimizer = new LinearICPOptimizer();
 	}
@@ -152,17 +122,12 @@ int reconstructRoom()
 		optimizer = new CeresICPOptimizer();
 	}
 
-	optimizer->setMatchingMaxDistance(0.1f);
-	if (USE_POINT_TO_PLANE)
-	{
-		optimizer->usePointToPlaneConstraints(true);
-		optimizer->setNbOfIterations(10);
-	}
-	else
-	{
-		optimizer->usePointToPlaneConstraints(false);
-		optimizer->setNbOfIterations(20);
-	}
+	optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
+	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
+	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
+	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
+	optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
+	optimizer->setNbOfIterations(config.nbOfIterations);
 
 	// We store the estimated camera poses.
 	std::vector<Matrix4f> estimatedPoses;
@@ -179,7 +144,13 @@ int reconstructRoom()
 
 		// Estimate the current camera pose from source to target mesh with ICP optimization.
 		// We downsample the source image to speed up the correspondence matching.
-		PointCloud source{sensor.getDepth(), sensor.getDepthIntrinsics(), sensor.getDepthExtrinsics(), sensor.getDepthImageWidth(), sensor.getDepthImageHeight(), 8};
+		PointCloud source{sensor.getDepth(),
+						  sensor.getDepthIntrinsics(),
+						  sensor.getDepthExtrinsics(),
+						  sensor.getDepthImageWidth(),
+						  sensor.getDepthImageHeight(),
+						  sensor.getColorRGBX(),
+						  8};
 		optimizer->estimatePose(source, target, currentCameraToWorld);
 
 		// Invert the transformation matrix to get the current camera pose.
@@ -188,7 +159,7 @@ int reconstructRoom()
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		if (i % 5 == 0)
+		if (i % 3 == 0)
 		{
 			// We write out the mesh to file for debugging.
 			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
@@ -213,13 +184,24 @@ int reconstructRoom()
 	return 0;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+	if (argc < 2)
+	{
+		std::cerr << "Usage: " << argv[0] << " <config.yaml>" << std::endl;
+		return -1;
+	}
+
+	// Load config from file.
+	ICPConfiguration config;
+	config.loadFromYaml(argv[1]);
+	config.show();
+
 	int result = 0;
-	if (RUN_SHAPE_ICP)
-		result += alignBunnyWithICP();
-	if (RUN_SEQUENCE_ICP)
-		result += reconstructRoom();
+	if (config.runShapeICP)
+		result += alignBunnyWithICP(config);
+	if (config.runSequenceICP)
+		result += reconstructRoom(config);
 
 	return result;
 }

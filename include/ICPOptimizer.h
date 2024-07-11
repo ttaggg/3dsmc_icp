@@ -12,15 +12,7 @@
 #include "PointCloud.h"
 #include "Constraints.h"
 #include "ProcrustesAligner.h"
-
-/**
- * enum for correspondence method: nearest neighbor or projective
- */
-enum CorrMethod
-{
-    ANN,
-    PROJ,
-};
+#include "ICPConfiguration.h"
 
 /**
  * ICP optimizer - Abstract Base Class
@@ -30,8 +22,10 @@ class ICPOptimizer
 public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
-    void setCorrespondenceMethod(CorrMethod method);
-    void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints);
+    void setCorrespondenceMethod(CorrMethod method, bool useColor);
+    void usePointToPointConstraints(bool bUsePointToPointConstraints, double weightPointToPointConstraints);
+    void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints, double weightPointToPlaneConstraints);
+    void useSymmetricConstraints(bool bUseSymmetricConstraints, double weightSymmetricConstraints);
     void setNbOfIterations(unsigned nIterations);
 
     virtual ~ICPOptimizer() = default;
@@ -48,7 +42,12 @@ public:
         const std::vector<Eigen::Vector2i> &corres,
         const Eigen::Matrix4f &transformation);
 protected:
+    bool m_bUsePointToPointConstraints;
+    bool m_weightPointToPointConstraints;
     bool m_bUsePointToPlaneConstraints;
+    bool m_weightPointToPlaneConstraints;
+    bool m_bUseSymmetricConstraints;
+    bool m_weightSymmetricConstraints;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
@@ -78,7 +77,13 @@ public:
 
 private:
     void configureSolver(ceres::Solver::Options &options);
-    void prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals, const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const;
+    void prepareConstraints(const std::vector<Vector3f> &sourcePoints,
+                            const std::vector<Vector3f> &targetPoints,
+                            const std::vector<Vector3f> &sourceNormals,
+                            const std::vector<Vector3f> &targetNormals,
+                            const std::vector<Match> matches,
+                            const PoseIncrement<double> &poseIncrement,
+                            ceres::Problem &problem) const;
 };
 
 /**
@@ -88,7 +93,9 @@ class LinearICPOptimizer : public ICPOptimizer
 {
 public:
     LinearICPOptimizer();
-    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+    virtual void estimatePose(const PointCloud &source,
+                              const PointCloud &target,
+                              Matrix4f &initialPose) override;
     std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
     double PointToPointComputeRMSE(
         const PointCloud &source,
@@ -102,6 +109,13 @@ public:
         const Eigen::Matrix4f &transformation);
 
 private:
-    Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints);
-    Matrix4f estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints, const std::vector<Vector3f> &targetNormals);
+    Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,
+                                      const std::vector<Vector3f> &targetPoints);
+    Matrix4f estimatePosePointToPlane(const std::vector<Vector3f> &sourcePoints,
+                                      const std::vector<Vector3f> &targetPoints,
+                                      const std::vector<Vector3f> &targetNormals);
+    Matrix4f estimatePoseSymmetric(const std::vector<Vector3f> &sourcePoints,
+                                   const std::vector<Vector3f> &targetPoints,
+                                   const std::vector<Vector3f> &sourceNormals,
+                                   const std::vector<Vector3f> &targetNormals);
 };
