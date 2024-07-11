@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <Open3D/Open3D.h>
+//#include <Open3D/Open3D.h>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
@@ -8,22 +8,28 @@
 #include "ICPOptimizer.h"
 #include "PointCloud.h"
 
-#define SHOW_BUNNY_CORRESPONDENCES 0
+#define SHOW_BUNNY_CORRESPONDENCES 1
 
 #define USE_POINT_TO_PLANE 0
-#define USE_LINEAR_ICP 0
+#define USE_LINEAR_ICP 1
 
 #define USE_PROJ_CORRESPONDENCE 0
 
 #define RUN_SHAPE_ICP 1
 #define RUN_SEQUENCE_ICP 0
 
+#define NUM_ITERATION 20
+
 int alignBunnyWithICP()
 {
 	// Load the source and target mesh.
-	const std::string filenameSource = std::string("../Data/mesh_input.off");
-	const std::string filenameTarget = std::string("../Data/mesh_target.off");
-	const std::string filenameOutput = "./mesh_output.off";
+
+	int niter = NUM_ITERATION;
+	const std::string filenameSource = std::string("../Data/bunny_part1.off");
+	const std::string filenameTarget = std::string("../Data/bunny_part2_trans.off");
+	const std::string filenameOutput = "./bunny_output_" + std::to_string(niter) + ".off";
+
+	
 
 	SimpleMesh sourceMesh;
 	if (!sourceMesh.loadMesh(filenameSource))
@@ -64,19 +70,21 @@ int alignBunnyWithICP()
 	{
 		optimizer->usePointToPlaneConstraints(true);
 		optimizer->setNbOfIterations(10);
+		
 	}
 	else
 	{
 		optimizer->usePointToPlaneConstraints(false);
 		optimizer->setNbOfIterations(20);
 	}
-
+	
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
 
 	Matrix4f estimatedPose = Matrix4f::Identity();
 	optimizer->estimatePose(source, target, estimatedPose);
 
+	
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
 	if (SHOW_BUNNY_CORRESPONDENCES)
@@ -92,22 +100,23 @@ int alignBunnyWithICP()
 	}
 	resultingMesh.writeMesh(filenameOutput);
 	std::cout << "Resulting mesh written." << std::endl;
+	
 
 	// Visualize the mesh with Open3D.
-	auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
+	//auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
 
-	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
-	{
-		std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
-		return 1;
-	}
+	//if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
+	//{
+	//	std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
+	//	return 1;
+	//}
 
-	if (!mesh->HasVertexNormals())
-	{
-		mesh->ComputeVertexNormals();
-	}
+	//if (!mesh->HasVertexNormals())
+	//{
+	//	mesh->ComputeVertexNormals();
+	//}
 
-	open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
+	//open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
 
 	delete optimizer;
 

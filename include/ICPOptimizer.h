@@ -36,7 +36,17 @@ public:
 
     virtual ~ICPOptimizer() = default;
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) = 0;
-
+    std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
+    double PointToPointComputeRMSE(
+        const PointCloud &source,
+        const PointCloud &target,
+        const std::vector<Eigen::Vector2i> &corres,
+        const Eigen::Matrix4f &transformation);
+    double PointToPlaneComputeRMSE(
+        const PointCloud &source,
+        const PointCloud &target,
+        const std::vector<Eigen::Vector2i> &corres,
+        const Eigen::Matrix4f &transformation);
 protected:
     bool m_bUsePointToPlaneConstraints;
     unsigned m_nIterations;
@@ -54,6 +64,17 @@ class CeresICPOptimizer : public ICPOptimizer
 public:
     CeresICPOptimizer();
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+    std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
+    double PointToPointComputeRMSE(
+        const PointCloud &source,
+        const PointCloud &target,
+        const std::vector<Eigen::Vector2i> &corres,
+        const Eigen::Matrix4f &transformation);
+    double PointToPlaneComputeRMSE(
+        const PointCloud &source,
+        const PointCloud &target,
+        const std::vector<Eigen::Vector2i> &corres,
+        const Eigen::Matrix4f &transformation);
 
 private:
     void configureSolver(ceres::Solver::Options &options);
@@ -68,6 +89,17 @@ class LinearICPOptimizer : public ICPOptimizer
 public:
     LinearICPOptimizer();
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+    std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
+    double PointToPointComputeRMSE(
+        const PointCloud &source,
+        const PointCloud &target,
+        const std::vector<Eigen::Vector2i> &corres,
+        const Eigen::Matrix4f &transformation);
+    double PointToPlaneComputeRMSE(
+        const PointCloud &source,
+        const PointCloud &target,
+        const std::vector<Eigen::Vector2i> &corres,
+        const Eigen::Matrix4f &transformation);
 
 private:
     Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints);
