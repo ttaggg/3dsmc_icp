@@ -12,11 +12,9 @@
 int alignBunnyWithICP(const ICPConfiguration &config)
 {
 	// Load the source and target mesh.
-
-	int niter = NUM_ITERATION;
 	const std::string filenameSource = std::string("../Data/bunny_part1.off");
 	const std::string filenameTarget = std::string("../Data/bunny_part2_trans.off");
-	const std::string filenameOutput = "./bunny_output_" + std::to_string(niter) + ".off";
+	const std::string filenameOutput = "./bunny_output.off";
 
 	
 
@@ -60,9 +58,9 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 
 	
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
-	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-	resultingMesh.writeMesh(filenameOutput);
-	std::cout << "Resulting mesh written." << std::endl;
+	// SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
+	// resultingMesh.writeMesh(filenameOutput);
+	// std::cout << "Resulting mesh written." << std::endl;
 	
 
 	// Visualize the mesh with Open3D.
