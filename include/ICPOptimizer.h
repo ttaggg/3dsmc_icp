@@ -29,7 +29,7 @@ public:
     void setNbOfIterations(unsigned nIterations);
 
     virtual ~ICPOptimizer() = default;
-    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) = 0;
+    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric) = 0;
     double PointToPointComputeRMSE(
         const PointCloud &source,
         const PointCloud &target,
@@ -61,7 +61,10 @@ class CeresICPOptimizer : public ICPOptimizer
 {
 public:
     CeresICPOptimizer();
-    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
+    virtual void estimatePose(const PointCloud &source, 
+                              const PointCloud &target, 
+                              Matrix4f &initialPose, 
+                              std::vector<std::vector<double>> &metric) override;
 private:
     void configureSolver(ceres::Solver::Options &options);
     void prepareConstraints(const std::vector<Vector3f> &sourcePoints,
@@ -82,7 +85,8 @@ public:
     LinearICPOptimizer();
     virtual void estimatePose(const PointCloud &source,
                               const PointCloud &target,
-                              Matrix4f &initialPose) override;
+                              Matrix4f &initialPose,
+                              std::vector<std::vector<double>> &metric) override;
 private:
     Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,
                                       const std::vector<Vector3f> &targetPoints);

@@ -164,7 +164,7 @@ double ICPOptimizer::PointToPlaneComputeRMSE(
 
 CeresICPOptimizer::CeresICPOptimizer() {}
 
-void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
+void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
@@ -230,8 +230,13 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         std::cout << "Optimization iteration done." << std::endl;
 
         // Calculate Error metric
-        auto rmse_ = PointToPlaneComputeRMSE(source, target, matches, estimatedPose);
-        std::cout << "[Point To Plane RMSE] " << rmse_ << std::endl;
+        std::vector<double> _metric;
+        _metric.push_back(elapsedSecs);
+        _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
+        _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
+        metric.push_back(_metric);
+        std::cout << "[Point To Point RMSE] " << _metric[0] << std::endl;
+        std::cout << "[Point To Plane RMSE] " << _metric[1] << std::endl;
     }
 
     // Store result
@@ -314,7 +319,7 @@ void CeresICPOptimizer::
 
 LinearICPOptimizer::LinearICPOptimizer() {}
 
-void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
+void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
@@ -376,9 +381,15 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         }
 
         std::cout << "Optimization iteration done." << std::endl;
+        
         // Calculate Error metric
-        auto rmse_ = PointToPlaneComputeRMSE(source, target, matches, estimatedPose);
-        std::cout << "[Point To Plane RMSE] " << rmse_ << std::endl;
+        std::vector<double> _metric;
+        _metric.push_back(elapsedSecs);
+        _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
+        _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
+        metric.push_back(_metric);
+        std::cout << "[Point To Point RMSE] " << _metric[0] << std::endl;
+        std::cout << "[Point To Plane RMSE] " << _metric[1] << std::endl;
     }
 
     // Store result

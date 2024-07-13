@@ -50,14 +50,22 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
+	std::vector<std::vector<double>> metric;
 
 	Matrix4f estimatedPose = Matrix4f::Identity();
-	optimizer->estimatePose(source, target, estimatedPose);
+	optimizer->estimatePose(source, target, estimatedPose, metric);
+	
+	std::ofstream file;
+	file.open("./metric.txt");
+	for (int i = 0; i < metric.size(); i++){
+		file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << ","<< metric[i][2] << std::endl;
+	}
+	file.close();
 
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
-	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-	resultingMesh.writeMesh(filenameOutput);
-	std::cout << "Resulting mesh written." << std::endl;
+	// SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
+	// resultingMesh.writeMesh(filenameOutput);
+	// std::cout << "Resulting mesh written." << std::endl;
 	
 
 	// Visualize the mesh with Open3D.
@@ -146,7 +154,8 @@ int reconstructRoom(const ICPConfiguration &config)
 						  sensor.getDepthImageHeight(),
 						  sensor.getColorRGBX(),
 						  8};
-		optimizer->estimatePose(source, target, currentCameraToWorld);
+		std::vector<std::vector<double>> metric;
+		optimizer->estimatePose(source, target, currentCameraToWorld, metric);
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
