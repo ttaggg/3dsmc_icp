@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <Open3D/Open3D.h>
+//#include <Open3D/Open3D.h>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
@@ -15,8 +15,6 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 	const std::string filenameSource = std::string("../../Data/bunny_part1.off");
 	const std::string filenameTarget = std::string("../../Data/bunny_part2_trans.off");
 	const std::string filenameOutput = "./bunny_output.off";
-
-	
 
 	SimpleMesh sourceMesh;
 	if (!sourceMesh.loadMesh(filenameSource))
@@ -61,21 +59,22 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 	resultingMesh.writeMesh(filenameOutput);
 	std::cout << "Resulting mesh written." << std::endl;
 	
+
 	// Visualize the mesh with Open3D.
-	auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
+	// auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
 
-	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
-	{
-		std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
-		return 1;
-	}
+	// if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
+	// {
+	// 	std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
+	// 	return 1;
+	// }
 
-	if (!mesh->HasVertexNormals())
-	{
-		mesh->ComputeVertexNormals();
-	}
+	// if (!mesh->HasVertexNormals())
+	// {
+	// 	mesh->ComputeVertexNormals();
+	// }
 
-	open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
+	// open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
 
 	delete optimizer;
 

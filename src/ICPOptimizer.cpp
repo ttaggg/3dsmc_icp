@@ -111,72 +111,50 @@ void ICPOptimizer::pruneCorrespondences(const std::vector<Vector3f> &sourceNorma
     }
 }
 
-std::vector<Eigen::Vector2i> ICPOptimizer::FindCorrespondence(const PointCloud &source, const PointCloud &target)
-{
-    const auto source_p = source.getPoints();
-    const auto target_p = target.getPoints();
-
-    std::vector<Eigen::Vector2i> corres;
-    for (int i = 0; i < source_p.size(); i++)
-    {
-        float minDistance = std::numeric_limits<float>::max();
-        int bestMatch = -1;
-
-        for (int j = 0; j < target_p.size(); j++)
-        {
-            float distance = (source_p[i] - target_p[j]).norm();
-            if (distance < minDistance)
-            {
-                minDistance = distance;
-                bestMatch = j;
-            }
-        }
-
-        corres.push_back(Eigen::Vector2i(i, bestMatch));
-    }
-    return corres;
-}
-
 double ICPOptimizer::PointToPointComputeRMSE(
         const PointCloud &source,
         const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
+        const std::vector<Match> &match,
         const Eigen::Matrix4f &transformation)
     {
 
     const auto source_p = source.getPoints();
     const auto target_p = target.getPoints();
 
-    if (corres.empty()) return 0.0;
+    if (match.empty()) return 0.0;
     double err = 0.0;
-    for (const auto &c : corres) {
-        const auto &pt = source_p[c(0)];
+    int i = 0;
+    for (const auto &m : match) {
+        const auto &pt = source_p[i];
         auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
-        err += (pt_trans - target_p[c[1]]).norm();
+        err += (pt_trans - target_p[m.idx]).norm();
+        i++;
     }
     
-    return std::sqrt(err / (double)corres.size());
+    return std::sqrt(err / (double)match.size());
 }
 
 double ICPOptimizer::PointToPlaneComputeRMSE(
         const PointCloud &source,
         const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
+        const std::vector<Match> &match,
         const Eigen::Matrix4f &transformation)
     {
     const auto source_p = source.getPoints();
     const auto target_p = target.getPoints();
     const auto target_n = target.getNormals();
 
-    if (corres.empty()) return 0.0;
+    if (match.empty()) return 0.0;
     double err = 0.0, r;
-    for (const auto &c : corres) {
-        const auto &pt = source_p[c(0)];
+    int i = 0;
+    for (const auto &m : match) {
+        const auto &pt = source_p[i];
         Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
-        r = (pt_trans - target_p[c[1]]).dot(target_n[c[1]]);
+        r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
         err += r * r;
+        i++;
     }
-    return std::sqrt(err / (double)corres.size());
+    return std::sqrt(err / (double)match.size());
 }
 
 
@@ -252,8 +230,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         std::cout << "Optimization iteration done." << std::endl;
 
         // Calculate Error metric
-        auto corres = FindCorrespondence(source, target);
-        auto rmse_ = PointToPlaneComputeRMSE(source, target, corres, estimatedPose);
+        auto rmse_ = PointToPlaneComputeRMSE(source, target, matches, estimatedPose);
         std::cout << "[Point To Plane RMSE] " << rmse_ << std::endl;
     }
 
@@ -400,8 +377,7 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
 
         std::cout << "Optimization iteration done." << std::endl;
         // Calculate Error metric
-        auto corres = FindCorrespondence(source, target);
-        auto rmse_ = PointToPlaneComputeRMSE(source, target, corres, estimatedPose);
+        auto rmse_ = PointToPlaneComputeRMSE(source, target, matches, estimatedPose);
         std::cout << "[Point To Plane RMSE] " << rmse_ << std::endl;
     }
 

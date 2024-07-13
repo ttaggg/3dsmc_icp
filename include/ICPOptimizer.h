@@ -30,16 +30,15 @@ public:
 
     virtual ~ICPOptimizer() = default;
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) = 0;
-    std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
     double PointToPointComputeRMSE(
         const PointCloud &source,
         const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
+        const std::vector<Match> &match,
         const Eigen::Matrix4f &transformation);
     double PointToPlaneComputeRMSE(
         const PointCloud &source,
         const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
+        const std::vector<Match> &match,
         const Eigen::Matrix4f &transformation);
 protected:
     bool m_bUsePointToPointConstraints;
