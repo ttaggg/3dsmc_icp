@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-//#include <Open3D/Open3D.h>
+#include <Open3D/Open3D.h>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
@@ -61,8 +61,7 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 	resultingMesh.writeMesh(filenameOutput);
 	std::cout << "Resulting mesh written." << std::endl;
 	
-
-	Visualize the mesh with Open3D.
+	// Visualize the mesh with Open3D.
 	auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
 
 	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
@@ -156,22 +155,22 @@ int reconstructRoom(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		// if (i % 3 == 0)
-		// {
-		// 	// We write out the mesh to file for debugging.
-		// 	SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
-		// 	SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
-		// 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
+		if (i % 3 == 0)
+		{
+			// We write out the mesh to file for debugging.
+			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+			SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+			SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
 
-		// 	std::stringstream ss;
-		// 	ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
-		// 	std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
-		// 	if (!resultingMesh.writeMesh(ss.str()))
-		// 	{
-		// 		std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-		// 		return -1;
-		// 	}
-		// }
+			std::stringstream ss;
+			ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
+			std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
+			if (!resultingMesh.writeMesh(ss.str()))
+			{
+				std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+				return -1;
+			}
+		}
 
 		i++;
 	}
