@@ -8,6 +8,7 @@
 #include "ICPOptimizer.h"
 #include "ICPConfiguration.h"
 #include "PointCloud.h"
+#include "Utils.h"
 
 int alignBunnyWithICP(const ICPConfiguration &config)
 {
@@ -41,12 +42,7 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 		optimizer = new CeresICPOptimizer();
 	}
 
-	optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
-	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
-	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
-	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
-	optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
-	optimizer->setNbOfIterations(config.nbOfIterations);
+	ICPOptimizer *optimizer = createOptimizer(config);
 
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
@@ -106,22 +102,7 @@ int reconstructRoom(const ICPConfiguration &config)
 	};
 
 	// Setup the optimizer.
-	ICPOptimizer *optimizer = nullptr;
-	if (config.useLinearICP)
-	{
-		optimizer = new LinearICPOptimizer();
-	}
-	else
-	{
-		optimizer = new CeresICPOptimizer();
-	}
-
-	optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
-	optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
-	optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
-	optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
-	optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
-	optimizer->setNbOfIterations(config.nbOfIterations);
+	ICPOptimizer *optimizer = createOptimizer(config);
 
 	// We store the estimated camera poses.
 	std::vector<Matrix4f> estimatedPoses;

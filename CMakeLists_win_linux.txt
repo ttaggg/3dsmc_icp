@@ -46,6 +46,7 @@ set(HEADER_FILES
     include/ProcrustesAligner.h
     include/ICPOptimizer.h
     include/ICPConfiguration.h
+    include/Utils.h
     external/data_utils/FreeImageHelper.h
 )
 
