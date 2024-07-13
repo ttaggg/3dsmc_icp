@@ -46,6 +46,7 @@ set(HEADER_FILES
     include/ProcrustesAligner.h
     include/ICPOptimizer.h
     include/ICPConfiguration.h
+    include/MeshDataLoader.h
     include/Utils.h
     external/data_utils/FreeImageHelper.h
 )
@@ -56,6 +57,7 @@ set(SOURCE_FILES
     src/ProcrustesAligner.cpp
     src/ICPOptimizer.cpp
     src/ICPConfiguration.cpp
+    src/MeshDataLoader.cpp
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})

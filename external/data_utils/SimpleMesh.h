@@ -14,6 +14,7 @@ struct Vertex
 	Vector4f position;
 	// Color stored as 4 unsigned char
 	Vector4uc color;
+	Vector3f normal;
 };
 
 struct Triangle
@@ -31,6 +32,38 @@ class SimpleMesh
 {
 public:
 	SimpleMesh() {}
+
+	SimpleMesh transformMesh(const Matrix4f &transformation)
+	{
+		SimpleMesh transformedMesh;
+
+		Matrix3f rotation = transformation.block<3, 3>(0, 0);
+
+		// Transform vertices and normals
+		for (const Vertex &v : m_vertices)
+		{
+			Vertex transformedVertex;
+
+			// Transform the position
+			transformedVertex.position = transformation * v.position;
+
+			// Transform the normal
+			transformedVertex.normal = rotation * v.normal;
+
+			// Return the color
+			transformedVertex.color = v.color;
+
+			transformedMesh.addVertex(transformedVertex);
+		}
+
+		// Same triangles
+		for (const Triangle &t : m_triangles)
+		{
+			transformedMesh.addTriangle(t);
+		}
+
+		return transformedMesh;
+	}
 
 	/**
 	 * Constructs a mesh from the current color and depth image.
@@ -152,6 +185,11 @@ public:
 		return fId;
 	}
 
+	void addTriangle(Triangle triangle)
+	{
+		m_triangles.push_back(triangle);
+	}
+
 	std::vector<Vertex> &getVertices()
 	{
 		return m_vertices;
@@ -207,7 +245,23 @@ public:
 		m_triangles.reserve(numP);
 
 		// Read vertices.
-		if (std::string(string1).compare("COFF") == 0)
+		if (std::string(string1).compare("NCOFF") == 0)
+		{
+			// We have color information.
+			for (unsigned int i = 0; i < numV; i++)
+			{
+				Vertex v;
+				file >> v.position.x() >> v.position.y() >> v.position.z();
+				v.position.w() = 1.f;
+				// Colors are stored as integers. We need to convert them.
+				Vector4i colorInt;
+				file >> colorInt.x() >> colorInt.y() >> colorInt.z() >> colorInt.w();
+				v.color = Vector4uc((unsigned char)colorInt.x(), (unsigned char)colorInt.y(), (unsigned char)colorInt.z(), (unsigned char)colorInt.w());
+				file >> v.normal.x() >> v.normal.y() >> v.normal.z();
+				m_vertices.push_back(v);
+			}
+		}
+		else if (std::string(string1).compare("COFF") == 0)
 		{
 			// We have color information.
 			for (unsigned int i = 0; i < numV; i++)
@@ -316,17 +370,23 @@ public:
 		joinedTriangles.reserve(nVertices1 + nVertices2);
 
 		// Add all vertices (we need to transform vertices of mesh 1).
+		// Change colors for visualization.
 		for (int i = 0; i < nVertices1; ++i)
 		{
 			const auto &v1 = vertices1[i];
 			Vertex v;
 			v.position = pose1to2 * v1.position;
-			v.color = v1.color;
+			v.color = Vector4uc(0, 255, 0, 0);
 			joinedVertices.push_back(v);
 		}
 		for (int i = 0; i < nVertices2; ++i)
-			joinedVertices.push_back(vertices2[i]);
-
+		{
+			const auto &v2 = vertices2[i];
+			Vertex v;
+			v.position = v2.position;
+			v.color = Vector4uc(255, 0, 0, 0);
+			joinedVertices.push_back(v);
+		}
 		// Add all faces (the indices of the second mesh need to be added an offset).
 		for (int i = 0; i < nTriangles1; ++i)
 			joinedTriangles.push_back(triangles1[i]);
@@ -338,38 +398,6 @@ public:
 		}
 
 		return joinedMesh;
-	}
-
-	/**
-	 * Generates a sphere around the given center point.
-	 */
-	static SimpleMesh sphere(Vector3f center, float scale = 1.f, Vector4uc color = {0, 0, 255, 255})
-	{
-		SimpleMesh mesh;
-		Vector4f centerHomogenous = Vector4f{center.x(), center.y(), center.z(), 1.f};
-
-		// These are precomputed values for sphere aproximation.
-		const std::vector<double> vertexComponents = {-0.525731, 0, 0.850651, 0.525731, 0, 0.850651, -0.525731, 0, -0.850651, 0.525731, 0, -0.850651, 0, 0.850651, 0.525731, 0, 0.850651, -0.525731, 0,
-													  -0.850651, 0.525731, 0, -0.850651, -0.525731, 0.850651, 0.525731, 0, -0.850651, 0.525731, 0, 0.850651, -0.525731, 0, -0.850651, -0.525731, 0};
-		const std::vector<unsigned> faceIndices = {0, 4, 1, 0, 9, 4, 9, 5, 4, 4, 5, 8, 4, 8, 1, 8, 10, 1, 8, 3, 10, 5, 3, 8, 5, 2, 3, 2, 7, 3, 7, 10,
-												   3, 7, 6, 10, 7, 11, 6, 11, 0, 6, 0, 1, 6, 6, 1, 10, 9, 0, 11, 9, 11, 2, 9, 2, 5, 7, 2, 11};
-
-		// Add vertices.
-		for (int i = 0; i < 12; ++i)
-		{
-			Vertex v;
-			v.position = centerHomogenous + scale * Vector4f{float(vertexComponents[3 * i + 0]), float(vertexComponents[3 * i + 1]), float(vertexComponents[3 * i + 2]), 0.f};
-			v.color = color;
-			mesh.addVertex(v);
-		}
-
-		// Add faces.
-		for (int i = 0; i < 20; ++i)
-		{
-			mesh.addFace(faceIndices[3 * i + 0], faceIndices[3 * i + 1], faceIndices[3 * i + 2]);
-		}
-
-		return mesh;
 	}
 
 	/**
@@ -403,91 +431,7 @@ public:
 		return mesh;
 	}
 
-	/**
-	 * Generates a cylinder, ranging from point p0 to point p1.
-	 */
-	static SimpleMesh cylinder(const Vector3f &p0, const Vector3f &p1, float radius, unsigned stacks, unsigned slices, const Vector4uc color = Vector4uc{0, 0, 255, 255})
-	{
-		SimpleMesh mesh;
-		auto &vertices = mesh.getVertices();
-		auto &triangles = mesh.getTriangles();
-
-		vertices.resize((stacks + 1) * slices);
-		triangles.resize(stacks * slices * 2);
-
-		float height = (p1 - p0).norm();
-
-		unsigned vIndex = 0;
-		for (unsigned i = 0; i <= stacks; i++)
-			for (unsigned i2 = 0; i2 < slices; i2++)
-			{
-				auto &v = vertices[vIndex++];
-				float theta = float(i2) * 2.0f * M_PI / float(slices);
-				v.position = Vector4f{p0.x() + radius * cosf(theta), p0.y() + radius * sinf(theta), p0.z() + height * float(i) / float(stacks), 1.f};
-				v.color = color;
-			}
-
-		unsigned iIndex = 0;
-		for (unsigned i = 0; i < stacks; i++)
-			for (unsigned i2 = 0; i2 < slices; i2++)
-			{
-				int i2p1 = (i2 + 1) % slices;
-
-				triangles[iIndex].idx0 = (i + 1) * slices + i2;
-				triangles[iIndex].idx1 = i * slices + i2;
-				triangles[iIndex].idx2 = i * slices + i2p1;
-
-				triangles[iIndex + 1].idx0 = (i + 1) * slices + i2;
-				triangles[iIndex + 1].idx1 = i * slices + i2p1;
-				triangles[iIndex + 1].idx2 = (i + 1) * slices + i2p1;
-
-				iIndex += 2;
-			}
-
-		Matrix4f transformation = Matrix4f::Identity();
-		transformation.block(0, 0, 3, 3) = face(Vector3f{0, 0, 1}, p1 - p0);
-		transformation.block(0, 3, 3, 1) = p0;
-		mesh.transform(transformation);
-
-		return mesh;
-	}
-
 private:
 	std::vector<Vertex> m_vertices;
 	std::vector<Triangle> m_triangles;
-
-	/**
-	 * Returns a rotation that transforms vector vA into vector vB.
-	 */
-	static Matrix3f face(const Vector3f &vA, const Vector3f &vB)
-	{
-		auto a = vA.normalized();
-		auto b = vB.normalized();
-		auto axis = b.cross(a);
-		float angle = acosf(a.dot(b));
-
-		if (angle == 0.0f)
-		{ // No rotation
-			return Matrix3f::Identity();
-		}
-
-		// Convert the rotation from SO3 to matrix notation.
-		// First we create a skew symetric matrix from the axis vector.
-		Matrix3f skewSymetricMatrix;
-		skewSymetricMatrix.setIdentity();
-		skewSymetricMatrix(0, 0) = 0;
-		skewSymetricMatrix(0, 1) = -axis.z();
-		skewSymetricMatrix(0, 2) = axis.y();
-		skewSymetricMatrix(1, 0) = axis.z();
-		skewSymetricMatrix(1, 1) = 0;
-		skewSymetricMatrix(1, 2) = -axis.x();
-		skewSymetricMatrix(2, 0) = -axis.y();
-		skewSymetricMatrix(2, 1) = axis.x();
-		skewSymetricMatrix(2, 2) = 0;
-
-		// We compute a rotation matrix using Rodrigues formula.
-		Matrix3f rotation = Matrix3f::Identity() + sinf(angle) * skewSymetricMatrix + (1 - cos(angle)) * skewSymetricMatrix * skewSymetricMatrix;
-
-		return rotation;
-	}
 };

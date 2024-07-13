@@ -83,6 +83,11 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
             throw std::runtime_error("Unknown correspondence method: " + method);
         }
     }
+
+    if (config["visualize"])
+    {
+        visualize = config["visualize"].as<bool>();
+    }
 }
 
 void ICPConfiguration::loadFromYaml(const std::string &filename)
@@ -108,7 +113,7 @@ void ICPConfiguration::show()
     std::cout << "=========== Task ===========" << std::endl;
     if (runShapeICP)
     {
-        std::cout << "Bunny Shape ICP" << std::endl;
+        std::cout << "Shape ICP" << std::endl;
     }
     else if (runSequenceICP)
     {
@@ -153,6 +158,7 @@ void ICPConfiguration::show()
     std::cout << "====== Other settings ======" << std::endl;
     std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
     std::cout << "nbOfIterations: " << nbOfIterations << std::endl;
+    std::cout << "Visualization: " << visualize << std::endl;
 
     std::cout << "============================" << std::endl;
 
@@ -183,7 +189,6 @@ void ICPConfiguration::_sanityCheck()
 
     if (useColors)
     {
-        assert(!runShapeICP && "Color makes no sense for a bunny example.");
         assert(correspondenceMethod != SHOOT && "Color is not supported for normal shoot.");
     }
 }
