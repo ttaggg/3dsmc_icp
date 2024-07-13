@@ -63,18 +63,6 @@ class CeresICPOptimizer : public ICPOptimizer
 public:
     CeresICPOptimizer();
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) override;
-    std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
-    double PointToPointComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
-        const Eigen::Matrix4f &transformation);
-    double PointToPlaneComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
-        const Eigen::Matrix4f &transformation);
-
 private:
     void configureSolver(ceres::Solver::Options &options);
     void prepareConstraints(const std::vector<Vector3f> &sourcePoints,
@@ -96,18 +84,6 @@ public:
     virtual void estimatePose(const PointCloud &source,
                               const PointCloud &target,
                               Matrix4f &initialPose) override;
-    std::vector<Eigen::Vector2i> FindCorrespondence(const PointCloud &source, const PointCloud &target);
-    double PointToPointComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
-        const Eigen::Matrix4f &transformation);
-    double PointToPlaneComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Eigen::Vector2i> &corres,
-        const Eigen::Matrix4f &transformation);
-
 private:
     Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,
                                       const std::vector<Vector3f> &targetPoints);
