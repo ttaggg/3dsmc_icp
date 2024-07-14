@@ -137,6 +137,8 @@ int reconstructRoom(const ICPConfiguration &config)
 	Matrix4f currentCameraToWorld = Matrix4f::Identity();
 	estimatedPoses.push_back(currentCameraToWorld.inverse());
 
+	std::vector<std::vector<double>> avg_metric;
+
 	int i = 0;
 	const int iMax = 50;
 	while (sensor.processNextFrame() && i <= iMax)
@@ -156,6 +158,14 @@ int reconstructRoom(const ICPConfiguration &config)
 						  8};
 		std::vector<std::vector<double>> metric;
 		optimizer->estimatePose(source, target, currentCameraToWorld, metric);
+
+		if(avg_metric.size() != 0){
+			for (int k = 0; k < metric.size(); k++){
+				avg_metric[k][0] += metric[k][0];
+				avg_metric[k][1] += metric[k][1];
+				avg_metric[k][2] += metric[k][2];
+			}
+		}
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
@@ -182,6 +192,19 @@ int reconstructRoom(const ICPConfiguration &config)
 
 		i++;
 	}
+
+	for (auto m : avg_metric){
+		m[0] /= (i + 1);
+		m[1] /= (i + 1);
+		m[2] /= (i + 1);
+	}
+
+	std::ofstream file;
+	file.open("./metric_room.txt");
+	for (int k = 0; k < avg_metric.size(); k++){
+		file << k + 1 << "," << avg_metric[k][0] << "," << avg_metric[k][1] << ","<< avg_metric[k][2] << std::endl;
+	}
+	file.close();
 
 	delete optimizer;
 

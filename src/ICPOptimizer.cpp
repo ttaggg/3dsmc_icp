@@ -235,8 +235,8 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
         _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
         metric.push_back(_metric);
-        std::cout << "[Point To Point RMSE] " << _metric[0] << std::endl;
-        std::cout << "[Point To Plane RMSE] " << _metric[1] << std::endl;
+        std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
+        std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
     }
 
     // Store result
@@ -388,8 +388,8 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
         _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
         metric.push_back(_metric);
-        std::cout << "[Point To Point RMSE] " << _metric[0] << std::endl;
-        std::cout << "[Point To Plane RMSE] " << _metric[1] << std::endl;
+        std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
+        std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
     }
 
     // Store result
