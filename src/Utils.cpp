@@ -16,6 +16,7 @@ std::string formatString(std::initializer_list<std::string> elements)
     return oss.str();
 }
 
+#ifndef OPEN3D_ENABLED 1
 void visualize(std::string filenameOutput)
 {
 
@@ -35,6 +36,7 @@ void visualize(std::string filenameOutput)
 
     open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
 }
+#endif
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,

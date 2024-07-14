@@ -1,7 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <Open3D/Open3D.h>
-
 #include "Eigen.h"
 #include "VirtualSensor.h"
 #include "SimpleMesh.h"
@@ -10,6 +8,12 @@
 #include "PointCloud.h"
 #include "DataLoader.h"
 #include "Utils.h"
+
+#define MESH_ENABLED 1
+#define OPEN3D_ENABLED 1
+#ifndef OPEN3D_ENABLED 1
+#include <Open3D/Open3D.h>
+#endif
 
 int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 {
@@ -48,10 +52,12 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 		}
 		file.close();
 
+#ifndef OPEN3D_ENABLED 1
 		if (config.visualize)
 		{
 			visualize(filenameOutput);
 		}
+#endif
 	}
 
 	delete optimizer;
@@ -119,9 +125,10 @@ int runSequenceICP(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		 if (i % 3 == 0)
-		 {
-		 	// We write out the mesh to file for debugging.
+#ifndef MESH_ENABLED 1
+		if (i % 3 == 0)
+		{
+			// We write out the mesh to file for debugging.
 		 	SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
 		 	SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
 		 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
@@ -134,7 +141,8 @@ int runSequenceICP(const ICPConfiguration &config)
 		 		std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
 		 		return -1;
 		 	}
-		 }
+		}
+#endif
 
 		i++;
 	}

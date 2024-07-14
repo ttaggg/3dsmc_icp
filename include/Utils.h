@@ -3,12 +3,16 @@
 #include <Eigen/Dense>
 #include <random>
 #include <cmath>
-#include <Open3D/Open3D.h>
 #include "Eigen.h"
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
 #include "PointCloud.h"
 #include "DataLoader.h"
+
+#define OPEN3D_ENABLED 1
+#ifndef OPEN3D_ENABLED 1
+#include <Open3D/Open3D.h>
+#endif
 
 bool containsSubstring(const std::string &str, const std::string &substring);
 
