@@ -12,9 +12,9 @@
 int alignBunnyWithICP(const ICPConfiguration &config)
 {
 	// Load the source and target mesh.
-	const std::string filenameSource = std::string("../../Data/bunny_part2_trans.off");
-	const std::string filenameTarget = std::string("../../Data/bunny_part1.off");
-	const std::string filenameOutput = "./bunny_icp.off";
+	const std::string filenameSource = std::string("../../Data/bunny_part1.off");
+	const std::string filenameTarget = std::string("../../Data/bunny_part2_trans.off");
+	const std::string filenameOutput = "./bunny_output.off";
 
 	SimpleMesh sourceMesh;
 	if (!sourceMesh.loadMesh(filenameSource))
@@ -50,9 +50,17 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 
 	PointCloud source{sourceMesh};
 	PointCloud target{targetMesh};
+	std::vector<std::vector<double>> metric;
 
 	Matrix4f estimatedPose = Matrix4f::Identity();
-	optimizer->estimatePose(source, target, estimatedPose);
+	optimizer->estimatePose(source, target, estimatedPose, metric);
+	
+	std::ofstream file;
+	file.open("./metric.txt");
+	for (int i = 0; i < metric.size(); i++){
+		file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << ","<< metric[i][2] << std::endl;
+	}
+	file.close();
 
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
@@ -64,13 +72,13 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 
 	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
 	{
-		std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
-		return 1;
+	 	std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
+	 	return 1;
 	}
 
 	if (!mesh->HasVertexNormals())
 	{
-		mesh->ComputeVertexNormals();
+	 	mesh->ComputeVertexNormals();
 	}
 
 	open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
@@ -128,6 +136,8 @@ int reconstructRoom(const ICPConfiguration &config)
 	Matrix4f currentCameraToWorld = Matrix4f::Identity();
 	estimatedPoses.push_back(currentCameraToWorld.inverse());
 
+	std::vector<std::vector<double>> avg_metric;
+
 	int i = 0;
 	const int iMax = 50;
 	while (sensor.processNextFrame() && i <= iMax)
@@ -145,7 +155,7 @@ int reconstructRoom(const ICPConfiguration &config)
 						  sensor.getDepthImageHeight(),
 						  sensor.getColorRGBX(),
 						  8};
-		optimizer->estimatePose(source, target, currentCameraToWorld);
+		optimizer->estimatePose(source, target, currentCameraToWorld, avg_metric);
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
@@ -153,25 +163,32 @@ int reconstructRoom(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		if (i % 3 == 0)
-		{
-			// We write out the mesh to file for debugging.
-			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
-			SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
-			SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
+		 if (i % 3 == 0)
+		 {
+		 	// We write out the mesh to file for debugging.
+		 	SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+		 	SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+		 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
 
 			std::stringstream ss;
-			ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
-			std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
-			if (!resultingMesh.writeMesh(ss.str()))
-			{
-				std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-				return -1;
-			}
-		}
+		 	ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
+		 	std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
+		 	if (!resultingMesh.writeMesh(ss.str()))
+		 	{
+		 		std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+		 		return -1;
+		 	}
+		 }
 
 		i++;
 	}
+
+	std::ofstream file;
+	file.open("./metric_room.txt");
+	for (int k = 0; k < avg_metric.size(); k++){
+		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << ","<< avg_metric[k][2] / i << std::endl;
+	}
+	file.close();
 
 	delete optimizer;
 
