@@ -47,8 +47,9 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 		// Save error metric
 		std::ofstream file;
 		file.open("./metric.txt");
-		for (int i = 0; i < metric.size(); i++){
-			file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << ","<< metric[i][2] << std::endl;
+		for (int i = 0; i < metric.size(); i++)
+		{
+			file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << "," << metric[i][2] << std::endl;
 		}
 		file.close();
 
@@ -129,18 +130,18 @@ int runSequenceICP(const ICPConfiguration &config)
 		if (i % 3 == 0)
 		{
 			// We write out the mesh to file for debugging.
-		 	SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
-		 	SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
-		 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
+			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+			SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+			SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
 
 			std::stringstream ss;
-		 	ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
-		 	std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
-		 	if (!resultingMesh.writeMesh(ss.str()))
-		 	{
-		 		std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-		 		return -1;
-		 	}
+			ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
+			std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
+			if (!resultingMesh.writeMesh(ss.str()))
+			{
+				std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+				return -1;
+			}
 		}
 #endif
 
@@ -149,8 +150,9 @@ int runSequenceICP(const ICPConfiguration &config)
 
 	std::ofstream file;
 	file.open("./metric_room.txt");
-	for (int k = 0; k < avg_metric.size(); k++){
-		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << ","<< avg_metric[k][2] / i << std::endl;
+	for (int k = 0; k < avg_metric.size(); k++)
+	{
+		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << "," << avg_metric[k][2] / i << std::endl;
 	}
 	file.close();
 

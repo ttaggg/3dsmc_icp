@@ -112,42 +112,46 @@ void ICPOptimizer::pruneCorrespondences(const std::vector<Vector3f> &sourceNorma
 }
 
 double ICPOptimizer::PointToPointComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Match> &match,
-        const Eigen::Matrix4f &transformation)
-    {
+    const PointCloud &source,
+    const PointCloud &target,
+    const std::vector<Match> &match,
+    const Eigen::Matrix4f &transformation)
+{
 
     const auto source_p = source.getPoints();
     const auto target_p = target.getPoints();
 
-    if (match.empty()) return 0.0;
+    if (match.empty())
+        return 0.0;
     double err = 0.0;
     int i = 0;
-    for (const auto &m : match) {
+    for (const auto &m : match)
+    {
         const auto &pt = source_p[i];
         auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
         err += (pt_trans - target_p[m.idx]).norm();
         i++;
     }
-    
+
     return std::sqrt(err / (double)match.size());
 }
 
 double ICPOptimizer::PointToPlaneComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Match> &match,
-        const Eigen::Matrix4f &transformation)
-    {
+    const PointCloud &source,
+    const PointCloud &target,
+    const std::vector<Match> &match,
+    const Eigen::Matrix4f &transformation)
+{
     const auto source_p = source.getPoints();
     const auto target_p = target.getPoints();
     const auto target_n = target.getNormals();
 
-    if (match.empty()) return 0.0;
+    if (match.empty())
+        return 0.0;
     double err = 0.0, r;
     int i = 0;
-    for (const auto &m : match) {
+    for (const auto &m : match)
+    {
         const auto &pt = source_p[i];
         Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
         r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
@@ -156,7 +160,6 @@ double ICPOptimizer::PointToPlaneComputeRMSE(
     }
     return std::sqrt(err / (double)match.size());
 }
-
 
 /**
  * ICP optimizer - using Ceres for optimization.
@@ -212,7 +215,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         // Run the solver (for one iteration).
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        //std::cout << summary.BriefReport() << std::endl;
+        // std::cout << summary.BriefReport() << std::endl;
         std::cout << summary.FullReport() << std::endl;
 
         // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
@@ -241,15 +244,18 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
     }
 
-    if(metric.size() != 0){
+    if (metric.size() != 0)
+    {
         std::cout << "y" << std::endl;
-        for (int k = 0; k < metric.size(); k++){
-		    metric[k][0] += tmp[k][0];
-		    metric[k][1] += tmp[k][1];
-		    metric[k][2] += tmp[k][2];
+        for (int k = 0; k < metric.size(); k++)
+        {
+            metric[k][0] += tmp[k][0];
+            metric[k][1] += tmp[k][1];
+            metric[k][2] += tmp[k][2];
         }
-	}
-    else{
+    }
+    else
+    {
         metric = tmp;
     }
 
@@ -396,7 +402,7 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         }
 
         std::cout << "Optimization iteration done." << std::endl;
-        
+
         // Calculate Error metric
         std::vector<double> _metric;
         _metric.push_back(elapsedSecs);
@@ -408,15 +414,18 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
     }
 
-    if(metric.size() != 0){
+    if (metric.size() != 0)
+    {
         std::cout << "y" << std::endl;
-        for (int k = 0; k < metric.size(); k++){
-		    metric[k][0] += tmp[k][0];
-		    metric[k][1] += tmp[k][1];
-		    metric[k][2] += tmp[k][2];
+        for (int k = 0; k < metric.size(); k++)
+        {
+            metric[k][0] += tmp[k][0];
+            metric[k][1] += tmp[k][1];
+            metric[k][2] += tmp[k][2];
         }
-	}
-    else{
+    }
+    else
+    {
         metric = tmp;
     }
 
