@@ -32,11 +32,21 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 		gt_trans = getRandomTransformation(rng, 45, 0.5);
 		dataloader->createMeshes(i, sourceMesh, targetMesh, gt_trans);
 
+		std::vector<std::vector<double>> metric;
 		filenameOutput = formatString({"./", dataloader->getName(i), "_joined.off"});
 		estimatedPose = alignShapes(sourceMesh,
 									targetMesh,
 									optimizer,
-									filenameOutput);
+									filenameOutput,
+									metric);
+
+		// Save error metric
+		std::ofstream file;
+		file.open("./metric.txt");
+		for (int i = 0; i < metric.size(); i++){
+			file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << ","<< metric[i][2] << std::endl;
+		}
+		file.close();
 
 		if (config.visualize)
 		{
@@ -82,6 +92,8 @@ int runSequenceICP(const ICPConfiguration &config)
 	Matrix4f currentCameraToWorld = Matrix4f::Identity();
 	estimatedPoses.push_back(currentCameraToWorld.inverse());
 
+	std::vector<std::vector<double>> avg_metric;
+
 	int i = 0;
 	const int iMax = 50;
 	while (sensor.processNextFrame() && i <= iMax)
@@ -99,7 +111,7 @@ int runSequenceICP(const ICPConfiguration &config)
 						  sensor.getDepthImageHeight(),
 						  sensor.getColorRGBX(),
 						  8};
-		optimizer->estimatePose(source, target, currentCameraToWorld);
+		optimizer->estimatePose(source, target, currentCameraToWorld, avg_metric);
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
@@ -107,25 +119,32 @@ int runSequenceICP(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		if (i % 3 == 0)
-		{
-			// We write out the mesh to file for debugging.
-			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
-			SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
-			SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
+		 if (i % 3 == 0)
+		 {
+		 	// We write out the mesh to file for debugging.
+		 	SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+		 	SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+		 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
 
 			std::stringstream ss;
-			ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
-			std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
-			if (!resultingMesh.writeMesh(ss.str()))
-			{
-				std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-				return -1;
-			}
-		}
+		 	ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
+		 	std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
+		 	if (!resultingMesh.writeMesh(ss.str()))
+		 	{
+		 		std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+		 		return -1;
+		 	}
+		 }
 
 		i++;
 	}
+
+	std::ofstream file;
+	file.open("./metric_room.txt");
+	for (int k = 0; k < avg_metric.size(); k++){
+		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << ","<< avg_metric[k][2] / i << std::endl;
+	}
+	file.close();
 
 	delete optimizer;
 
