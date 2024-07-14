@@ -1,0 +1,12 @@
+# Task
+runShapeICP: true
+# ICP type
+useLinearICP: false
+# ICP objective(s)
+useSymmetric: true
+# Correspondence method (NN / SHOOT)
+correspondenceMethod: NN
+# Other settings
+matchingMaxDistance: 1
+nbOfIterations: 10
+visualize: true

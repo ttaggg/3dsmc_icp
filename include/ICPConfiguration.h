@@ -34,6 +34,7 @@ public:
     // Other settings
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;
+    bool visualize = false;
 
     void loadFromYaml(const std::string &filename);
     void show();

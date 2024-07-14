@@ -1,4 +1,5 @@
 #include <iostream>
+#include <format>
 #include <fstream>
 #include <Open3D/Open3D.h>
 
@@ -8,83 +9,61 @@
 #include "ICPOptimizer.h"
 #include "ICPConfiguration.h"
 #include "PointCloud.h"
+#include "MeshDataLoader.h"
 #include "Utils.h"
 
-int alignBunnyWithICP(const ICPConfiguration &config)
+int runShapeICP(const ICPConfiguration &config)
 {
-	// Load the source and target mesh.
-	const std::string filenameSource = std::string("../../Data/bunny_part1.off");
-	const std::string filenameTarget = std::string("../../Data/bunny_part2_trans.off");
-	const std::string filenameOutput = "./bunny_output.off";
+	// Reproducibility
+	std::mt19937 rng(42);
 
-	SimpleMesh sourceMesh;
-	if (!sourceMesh.loadMesh(filenameSource))
-	{
-		std::cout << "Mesh file wasn't read successfully at location: " << filenameSource << std::endl;
-		return -1;
-	}
-
-	SimpleMesh targetMesh;
-	if (!targetMesh.loadMesh(filenameTarget))
-	{
-		std::cout << "Mesh file wasn't read successfully at location: " << filenameTarget << std::endl;
-		return -1;
-	}
-
-	// Estimate the pose from source to target mesh with ICP optimization.
-	ICPOptimizer *optimizer = nullptr;
-	if (config.useLinearICP)
-	{
-		optimizer = new LinearICPOptimizer();
-	}
-	else
-	{
-		optimizer = new CeresICPOptimizer();
-	}
+	// Load the source mesh.
+	const std::string directoryPath = std::string("../Data/greyc_debug/");
+	MeshDataLoader dataloader(directoryPath);
 
 	ICPOptimizer *optimizer = createOptimizer(config);
+	Matrix4f gt_trans;			// True value of the transformation.
+	SimpleMesh sourceMesh;		// Loaded mesh.
+	SimpleMesh targetMesh;		// Mesh transformed by a random transformation.
+	Matrix4f estimatedPose;		// Estimated transformation;
+	std::string filenameOutput; // Where to write output.
 
-	PointCloud source{sourceMesh};
-	PointCloud target{targetMesh};
-	std::vector<std::vector<double>> metric;
-
-	Matrix4f estimatedPose = Matrix4f::Identity();
-	optimizer->estimatePose(source, target, estimatedPose, metric);
-	
-	std::ofstream file;
-	file.open("./metric.txt");
-	for (int i = 0; i < metric.size(); i++){
-		file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << ","<< metric[i][2] << std::endl;
-	}
-	file.close();
-
-	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
-	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-	resultingMesh.writeMesh(filenameOutput);
-	std::cout << "Resulting mesh written." << std::endl;
-
-	// Visualize the mesh with Open3D.
-	auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
-
-	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
+	for (size_t i = 0; i < dataloader.size(); ++i)
 	{
-	 	std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
-	 	return 1;
-	}
+		dataloader.getMesh(i, sourceMesh);
 
-	if (!mesh->HasVertexNormals())
-	{
-	 	mesh->ComputeVertexNormals();
-	}
+		filenameOutput = fmt::format("./{}_joined.off", dataloader.getName(i));
 
-	open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
+		gt_trans = getRandomTransformation(rng, 45, 0.5);
+		targetMesh = sourceMesh.transformMesh(gt_trans);
+
+		std::vector<std::vector<double>> metric;
+		estimatedPose = alignShapes(sourceMesh,
+									targetMesh,
+									optimizer,
+									filenameOutput,
+									metric);
+
+		// Save error metric
+		std::ofstream file;
+		file.open("./metric.txt");
+		for (int i = 0; i < metric.size(); i++){
+			file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << ","<< metric[i][2] << std::endl;
+		}
+		file.close();
+
+		if (config.visualize)
+		{
+			visualize(filenameOutput);
+		}
+	}
 
 	delete optimizer;
 
 	return 0;
 }
 
-int reconstructRoom(const ICPConfiguration &config)
+int runSequenceICP(const ICPConfiguration &config)
 {
 	std::string filenameIn = std::string("../../Data/rgbd_dataset_freiburg1_xyz/");
 	std::string filenameBaseOut = std::string("mesh_");
@@ -191,9 +170,18 @@ int main(int argc, char *argv[])
 
 	int result = 0;
 	if (config.runShapeICP)
-		result += alignBunnyWithICP(config);
-	if (config.runSequenceICP)
-		result += reconstructRoom(config);
+	{
+		result = runShapeICP(config);
+	}
+	else if (config.runSequenceICP)
+	{
+		result = runSequenceICP(config);
+	}
+	else
+	{
+		std::cerr << "Set the task to either runShapeICP or runSequenceICP." << std::endl;
+		return -1;
+	}
 
 	return result;
 }
