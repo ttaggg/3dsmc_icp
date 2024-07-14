@@ -1,5 +1,4 @@
 #include <iostream>
-#include <format>
 #include <fstream>
 #include <Open3D/Open3D.h>
 
@@ -9,17 +8,17 @@
 #include "ICPOptimizer.h"
 #include "ICPConfiguration.h"
 #include "PointCloud.h"
-#include "MeshDataLoader.h"
+#include "DataLoader.h"
 #include "Utils.h"
 
-int runShapeICP(const ICPConfiguration &config)
+int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 {
 	// Reproducibility
 	std::mt19937 rng(42);
 
-	// Load the source mesh.
-	const std::string directoryPath = std::string("../Data/greyc_debug/");
-	MeshDataLoader dataloader(directoryPath);
+	// Load the path to meshes.
+	auto dataloader = createDataloader(directoryPath);
+	dataloader->loadMeshPaths(directoryPath);
 
 	ICPOptimizer *optimizer = createOptimizer(config);
 	Matrix4f gt_trans;			// True value of the transformation.
@@ -28,16 +27,13 @@ int runShapeICP(const ICPConfiguration &config)
 	Matrix4f estimatedPose;		// Estimated transformation;
 	std::string filenameOutput; // Where to write output.
 
-	for (size_t i = 0; i < dataloader.size(); ++i)
+	for (size_t i = 0; i < dataloader->size(); ++i)
 	{
-		dataloader.getMesh(i, sourceMesh);
-
-		filenameOutput = fmt::format("./{}_joined.off", dataloader.getName(i));
-
 		gt_trans = getRandomTransformation(rng, 45, 0.5);
-		targetMesh = sourceMesh.transformMesh(gt_trans);
+		dataloader->createMeshes(i, sourceMesh, targetMesh, gt_trans);
 
 		std::vector<std::vector<double>> metric;
+		filenameOutput = formatString({"./", dataloader->getName(i), "_joined.off"});
 		estimatedPose = alignShapes(sourceMesh,
 									targetMesh,
 									optimizer,
@@ -163,6 +159,10 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	// TODO(oleg): directory should be in argv.
+	const std::string directoryPath = std::string("../Data/greyc_partial_debug/"); // Two partially complete meshes.
+	// const std::string directoryPath = std::string("../Data/greyc_debug/"); // Two complete meshes.
+
 	// Load config from file.
 	ICPConfiguration config;
 	config.loadFromYaml(argv[1]);
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 	int result = 0;
 	if (config.runShapeICP)
 	{
-		result = runShapeICP(config);
+		result = runShapeICP(config, directoryPath);
 	}
 	else if (config.runSequenceICP)
 	{
