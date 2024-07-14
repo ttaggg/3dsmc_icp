@@ -15,7 +15,7 @@ std::string formatString(std::initializer_list<std::string> elements)
     }
     return oss.str();
 }
-
+/*
 void visualize(std::string filenameOutput)
 {
 
@@ -34,19 +34,20 @@ void visualize(std::string filenameOutput)
     }
 
     open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
-}
+}*/
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
                      ICPOptimizer *optimizer,
-                     std::string filenameOutput)
+                     std::string filenameOutput,
+                     std::vector<std::vector<double>> &metric)
 {
 
     PointCloud source{sourceMesh};
     PointCloud target{targetMesh};
 
     Matrix4f estimatedPose = Matrix4f::Identity();
-    optimizer->estimatePose(source, target, estimatedPose);
+    optimizer->estimatePose(source, target, estimatedPose, metric);
 
     // Visualize the resulting joined mesh. We add triangulated spheres for point matches.
     SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);

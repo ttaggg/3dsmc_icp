@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <random>
 #include <cmath>
-#include <Open3D/Open3D.h>
+//#include <Open3D/Open3D.h>
 #include "Eigen.h"
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
@@ -20,8 +20,7 @@ Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
                      ICPOptimizer *optimizer,
                      std::string filenameOutput,
-                     std::vector<std::vector<double>> &metric)
-
+                     std::vector<std::vector<double>> &metric);
 Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_trans);
 ICPOptimizer *createOptimizer(const ICPConfiguration &config);
 

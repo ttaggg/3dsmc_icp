@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <Open3D/Open3D.h>
+//#include <Open3D/Open3D.h>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
@@ -48,10 +48,10 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 		}
 		file.close();
 
-		if (config.visualize)
-		{
-			visualize(filenameOutput);
-		}
+		//if (config.visualize)
+		//{
+		//	visualize(filenameOutput);
+		//}
 	}
 
 	delete optimizer;

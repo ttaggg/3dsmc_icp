@@ -28,6 +28,7 @@ endif(WIN32)
 
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17")
 
 #set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
 #find_package(Open3D REQUIRED)
