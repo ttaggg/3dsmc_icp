@@ -171,6 +171,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
+    std::vector<std::vector<double>> tmp;
 
     // We optimize on the transformation in SE3 notation: 3 parameters for the axis-angle vector of the rotation (its length presents
     // the rotation angle) and 3 parameters for the translation vector.
@@ -234,9 +235,22 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         _metric.push_back(elapsedSecs);
         _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
         _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
-        metric.push_back(_metric);
+        tmp.push_back(_metric);
+
         std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
         std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
+    }
+
+    if(metric.size() != 0){
+        std::cout << "y" << std::endl;
+        for (int k = 0; k < metric.size(); k++){
+		    metric[k][0] += tmp[k][0];
+		    metric[k][1] += tmp[k][1];
+		    metric[k][2] += tmp[k][2];
+        }
+	}
+    else{
+        metric = tmp;
     }
 
     // Store result
@@ -326,6 +340,7 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
+    std::vector<std::vector<double>> tmp;
 
     for (int i = 0; i < m_nIterations; ++i)
     {
@@ -387,9 +402,22 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         _metric.push_back(elapsedSecs);
         _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
         _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
-        metric.push_back(_metric);
+        tmp.push_back(_metric);
+
         std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
         std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
+    }
+
+    if(metric.size() != 0){
+        std::cout << "y" << std::endl;
+        for (int k = 0; k < metric.size(); k++){
+		    metric[k][0] += tmp[k][0];
+		    metric[k][1] += tmp[k][1];
+		    metric[k][2] += tmp[k][2];
+        }
+	}
+    else{
+        metric = tmp;
     }
 
     // Store result

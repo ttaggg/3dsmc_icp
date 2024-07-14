@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-//#include <Open3D/Open3D.h>
+#include <Open3D/Open3D.h>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
@@ -63,26 +63,25 @@ int alignBunnyWithICP(const ICPConfiguration &config)
 	file.close();
 
 	// Visualize the resulting joined mesh. We add triangulated spheres for point matches.
-	// SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-	// resultingMesh.writeMesh(filenameOutput);
-	// std::cout << "Resulting mesh written." << std::endl;
-	
+	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
+	resultingMesh.writeMesh(filenameOutput);
+	std::cout << "Resulting mesh written." << std::endl;
 
 	// Visualize the mesh with Open3D.
-	// auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
+	auto mesh = std::make_shared<open3d::geometry::TriangleMesh>();
 
-	// if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
-	// {
-	// 	std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
-	// 	return 1;
-	// }
+	if (!open3d::io::ReadTriangleMesh(filenameOutput, *mesh))
+	{
+	 	std::cerr << "Failed to read mesh from " << filenameOutput << std::endl;
+	 	return 1;
+	}
 
-	// if (!mesh->HasVertexNormals())
-	// {
-	// 	mesh->ComputeVertexNormals();
-	// }
+	if (!mesh->HasVertexNormals())
+	{
+	 	mesh->ComputeVertexNormals();
+	}
 
-	// open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
+	open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
 
 	delete optimizer;
 
@@ -156,16 +155,7 @@ int reconstructRoom(const ICPConfiguration &config)
 						  sensor.getDepthImageHeight(),
 						  sensor.getColorRGBX(),
 						  8};
-		std::vector<std::vector<double>> metric;
-		optimizer->estimatePose(source, target, currentCameraToWorld, metric);
-
-		if(avg_metric.size() != 0){
-			for (int k = 0; k < metric.size(); k++){
-				avg_metric[k][0] += metric[k][0];
-				avg_metric[k][1] += metric[k][1];
-				avg_metric[k][2] += metric[k][2];
-			}
-		}
+		optimizer->estimatePose(source, target, currentCameraToWorld, avg_metric);
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
@@ -173,36 +163,30 @@ int reconstructRoom(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-		if (i % 3 == 0)
-		{
-			// We write out the mesh to file for debugging.
-			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
-			SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
-			SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
+		 if (i % 3 == 0)
+		 {
+		 	// We write out the mesh to file for debugging.
+		 	SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+		 	SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+		 	SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
 
 			std::stringstream ss;
-			ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
-			std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
-			if (!resultingMesh.writeMesh(ss.str()))
-			{
-				std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-				return -1;
-			}
-		}
+		 	ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
+		 	std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
+		 	if (!resultingMesh.writeMesh(ss.str()))
+		 	{
+		 		std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+		 		return -1;
+		 	}
+		 }
 
 		i++;
-	}
-
-	for (auto m : avg_metric){
-		m[0] /= (i + 1);
-		m[1] /= (i + 1);
-		m[2] /= (i + 1);
 	}
 
 	std::ofstream file;
 	file.open("./metric_room.txt");
 	for (int k = 0; k < avg_metric.size(); k++){
-		file << k + 1 << "," << avg_metric[k][0] << "," << avg_metric[k][1] << ","<< avg_metric[k][2] << std::endl;
+		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << ","<< avg_metric[k][2] / i << std::endl;
 	}
 	file.close();
 
