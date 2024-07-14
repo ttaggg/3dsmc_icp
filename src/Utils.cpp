@@ -15,7 +15,7 @@ std::string formatString(std::initializer_list<std::string> elements)
     }
     return oss.str();
 }
-/*
+
 void visualize(std::string filenameOutput)
 {
 
@@ -34,7 +34,7 @@ void visualize(std::string filenameOutput)
     }
 
     open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
-}*/
+}
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,

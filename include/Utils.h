@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <random>
 #include <cmath>
-//#include <Open3D/Open3D.h>
+#include <Open3D/Open3D.h>
 #include "Eigen.h"
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
