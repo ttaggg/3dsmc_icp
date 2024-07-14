@@ -13,6 +13,7 @@
 #include "Constraints.h"
 #include "ProcrustesAligner.h"
 #include "ICPConfiguration.h"
+#include "Evaluator.h"
 
 /**
  * ICP optimizer - Abstract Base Class
@@ -30,6 +31,9 @@ public:
 
     virtual ~ICPOptimizer() = default;
     virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose) = 0;
+
+    void setEvaluator(Evaluator evaluator);
+    Evaluator evaluator;
 
 protected:
     bool m_bUsePointToPointConstraints;

@@ -35,6 +35,9 @@ public:
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;
     bool visualize = false;
+    bool evaluate_rmse_naive = false;
+    bool evaluate_rmse_nn = false;
+    bool evaluate_transforms = false;
 
     void loadFromYaml(const std::string &filename);
     void show();

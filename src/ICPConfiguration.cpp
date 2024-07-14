@@ -159,6 +159,9 @@ void ICPConfiguration::show()
     std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
     std::cout << "nbOfIterations: " << nbOfIterations << std::endl;
     std::cout << "Visualization: " << visualize << std::endl;
+    std::cout << "Evaluate RMSE naive: " << evaluate_rmse_naive << std::endl;
+    std::cout << "Evaluate RMSE NN: " << evaluate_rmse_nn << std::endl;
+    std::cout << "Evaluate transforms: " << evaluate_transforms << std::endl;
 
     std::cout << "============================" << std::endl;
 

@@ -14,6 +14,11 @@ void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
     m_corrAlgo->setMatchingMaxDistance(maxDistance);
 }
 
+void ICPOptimizer::setEvaluator(Evaluator evaluator_)
+{
+    evaluator = evaluator_;
+}
+
 void ICPOptimizer::setCorrespondenceMethod(CorrMethod method, bool useColors)
 {
     if (method == NN)

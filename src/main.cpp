@@ -10,6 +10,7 @@
 #include "PointCloud.h"
 #include "DataLoader.h"
 #include "Utils.h"
+#include "Evaluator.h"
 
 int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 {
@@ -21,6 +22,13 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 	dataloader->loadMeshPaths(directoryPath);
 
 	ICPOptimizer *optimizer = createOptimizer(config);
+
+	Evaluator evaluator(config);
+	if (config.evaluate_rmse_naive || config.evaluate_rmse_nn || config.evaluate_transforms)
+	{
+		optimizer->setEvaluator(evaluator);
+	}
+
 	Matrix4f gt_trans;			// True value of the transformation.
 	SimpleMesh sourceMesh;		// Loaded mesh.
 	SimpleMesh targetMesh;		// Mesh transformed by a random transformation.
