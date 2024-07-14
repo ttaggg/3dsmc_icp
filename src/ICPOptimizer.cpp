@@ -123,17 +123,27 @@ double ICPOptimizer::PointToPointComputeRMSE(
 
     if (match.empty())
         return 0.0;
+
     double err = 0.0;
-    int i = 0;
-    for (const auto &m : match)
+    int unmatched = 0;
+    for (int i = 0; i < match.size(); i++)
     {
+        const auto &m = match[i];
         const auto &pt = source_p[i];
-        auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
-        err += (pt_trans - target_p[m.idx]).norm();
+
+        if (m.idx != -1)
+        {
+            auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
+            err += (pt_trans - target_p[m.idx]).norm();
+        }
+        else
+        {
+            unmatched++;
+        }
         i++;
     }
 
-    return std::sqrt(err / (double)match.size());
+    return std::sqrt(err / (double)(match.size() - unmatched));
 }
 
 double ICPOptimizer::PointToPlaneComputeRMSE(
@@ -148,17 +158,27 @@ double ICPOptimizer::PointToPlaneComputeRMSE(
 
     if (match.empty())
         return 0.0;
+
     double err = 0.0, r;
     int i = 0;
-    for (const auto &m : match)
+    int unmatched = 0;
+    for (int i = 0; i < match.size(); i++)
     {
+        const auto &m = match[i];
         const auto &pt = source_p[i];
-        Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
-        r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
-        err += r * r;
+        if (m.idx != -1)
+        {
+            Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
+            r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
+            err += r * r;
+        }
+        else
+        {
+            unmatched++;
+        }
         i++;
     }
-    return std::sqrt(err / (double)match.size());
+    return std::sqrt(err / (double)(match.size() - unmatched));
 }
 
 /**
@@ -215,8 +235,8 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         // Run the solver (for one iteration).
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        // std::cout << summary.BriefReport() << std::endl;
-        std::cout << summary.FullReport() << std::endl;
+        std::cout << summary.BriefReport() << std::endl;
+        // std::cout << summary.FullReport() << std::endl;
 
         // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
         Matrix4f matrix;
