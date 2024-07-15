@@ -1,5 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <cassert>
+#include <yaml-cpp/yaml.h>
+
 /**
  * enum for correspondence method: nearest neighbor or projective
  */
@@ -37,7 +41,12 @@ public:
     bool visualize = false;
     bool evaluate_rmse_naive = false;
     bool evaluate_rmse_nn = false;
+    bool evaluate_rmse_nn_plane = false;
     bool evaluate_transforms = false;
+    bool evaluate_time = false;
+    // Experiment
+    std::string experiment_name = "default";
+    std::string output_dir = ".";
 
     void loadFromYaml(const std::string &filename);
     void show();

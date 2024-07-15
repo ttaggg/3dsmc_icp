@@ -1,13 +1,4 @@
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <iostream>
-#include "SimpleMesh.h"
 #include "DataLoader.h"
-#include "ICPOptimizer.h"
-#include "SimpleMesh.h"
-#include "PointCloud.h"
-#include "Utils.h"
 
 size_t DataLoader::size()
 {

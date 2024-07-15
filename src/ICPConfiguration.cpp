@@ -1,7 +1,3 @@
-#include <iostream>
-#include <cassert>
-#include <yaml-cpp/yaml.h>
-
 #include "ICPConfiguration.h"
 
 void ICPConfiguration::_loadFromYaml(const std::string &filename)
@@ -87,6 +83,39 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     if (config["visualize"])
     {
         visualize = config["visualize"].as<bool>();
+    }
+
+    if (config["evaluate_rmse_naive"])
+    {
+        evaluate_rmse_naive = config["evaluate_rmse_naive"].as<bool>();
+    }
+
+    if (config["evaluate_rmse_nn"])
+    {
+        evaluate_rmse_nn = config["evaluate_rmse_nn"].as<bool>();
+    }
+
+    if (config["evaluate_rmse_nn_plane"])
+    {
+        evaluate_rmse_nn_plane = config["evaluate_rmse_nn_plane"].as<bool>();
+    }
+
+    if (config["evaluate_transforms"])
+    {
+        evaluate_transforms = config["evaluate_transforms"].as<bool>();
+    }
+    if (config["evaluate_time"])
+    {
+        evaluate_time = config["evaluate_time"].as<bool>();
+    }
+
+    if (config["experiment_name"])
+    {
+        experiment_name = config["experiment_name"].as<std::string>();
+    }
+    if (config["output_dir"])
+    {
+        output_dir = config["output_dir"].as<std::string>();
     }
 }
 

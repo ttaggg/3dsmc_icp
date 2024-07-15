@@ -30,20 +30,13 @@ public:
     void setNbOfIterations(unsigned nIterations);
 
     virtual ~ICPOptimizer() = default;
-    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric) = 0;
-    double PointToPointComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Match> &match,
-        const Eigen::Matrix4f &transformation);
-    double PointToPlaneComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Match> &match,
-        const Eigen::Matrix4f &transformation);
+    virtual void estimatePose(const PointCloud &source,
+                              const PointCloud &target,
+                              Matrix4f &initialPose,
+                              Matrix4f &groundPose) = 0;
 
-    void setEvaluator(Evaluator evaluator);
-    Evaluator evaluator;
+    void setEvaluator(Evaluator *evaluator);
+    Evaluator *evaluator;
 
 protected:
     bool m_bUsePointToPointConstraints;
@@ -52,6 +45,7 @@ protected:
     bool m_weightPointToPlaneConstraints;
     bool m_bUseSymmetricConstraints;
     bool m_weightSymmetricConstraints;
+    bool m_evaluate = false;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
@@ -69,7 +63,7 @@ public:
     virtual void estimatePose(const PointCloud &source,
                               const PointCloud &target,
                               Matrix4f &initialPose,
-                              std::vector<std::vector<double>> &metric) override;
+                              Matrix4f &groundPose) override;
 
 private:
     void configureSolver(ceres::Solver::Options &options);
@@ -92,7 +86,7 @@ public:
     virtual void estimatePose(const PointCloud &source,
                               const PointCloud &target,
                               Matrix4f &initialPose,
-                              std::vector<std::vector<double>> &metric) override;
+                              Matrix4f &groundPose) override;
 
 private:
     Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,

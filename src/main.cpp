@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include "Eigen.h"
 #include "VirtualSensor.h"
 #include "SimpleMesh.h"
 #include "ICPOptimizer.h"
@@ -28,12 +27,13 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 	ICPOptimizer *optimizer = createOptimizer(config);
 
 	Evaluator evaluator(config);
-	if (config.evaluate_rmse_naive || config.evaluate_rmse_nn || config.evaluate_transforms)
+	bool evaluate = (config.evaluate_rmse_naive || config.evaluate_rmse_nn || config.evaluate_transforms);
+	if (evaluate)
 	{
-		optimizer->setEvaluator(evaluator);
+		optimizer->setEvaluator(&evaluator);
 	}
 
-	Matrix4f gt_trans;			// True value of the transformation.
+	Matrix4f gtTransform;		// True value of the transformation.
 	SimpleMesh sourceMesh;		// Loaded mesh.
 	SimpleMesh targetMesh;		// Mesh transformed by a random transformation.
 	Matrix4f estimatedPose;		// Estimated transformation;
@@ -41,25 +41,20 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 
 	for (size_t i = 0; i < dataloader->size(); ++i)
 	{
-		gt_trans = getRandomTransformation(rng, 45, 0.5);
-		dataloader->createMeshes(i, sourceMesh, targetMesh, gt_trans);
+		gtTransform = getRandomTransformation(rng, 45, 0.5);
+		dataloader->createMeshes(i, sourceMesh, targetMesh, gtTransform);
 
-		std::vector<std::vector<double>> metric;
 		filenameOutput = formatString({"./", dataloader->getName(i), "_joined.off"});
 		estimatedPose = alignShapes(sourceMesh,
 									targetMesh,
+									gtTransform,
 									optimizer,
-									filenameOutput,
-									metric);
+									filenameOutput);
 
-		// Save error metric
-		std::ofstream file;
-		file.open("./metric.txt");
-		for (int i = 0; i < metric.size(); i++)
-		{
-			file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << "," << metric[i][2] << std::endl;
-		}
-		file.close();
+		evaluator.write(config.output_dir,
+						config.experiment_name,
+						dataloader->getName(i));
+		evaluator.reset();
 
 #ifndef OPEN3D_ENABLED 1
 		if (config.visualize)
@@ -107,7 +102,7 @@ int runSequenceICP(const ICPConfiguration &config)
 	Matrix4f currentCameraToWorld = Matrix4f::Identity();
 	estimatedPoses.push_back(currentCameraToWorld.inverse());
 
-	std::vector<std::vector<double>> avg_metric;
+	// std::vector<std::vector<double>> avg_metric;
 
 	int i = 0;
 	const int iMax = 50;
@@ -126,7 +121,10 @@ int runSequenceICP(const ICPConfiguration &config)
 						  sensor.getDepthImageHeight(),
 						  sensor.getColorRGBX(),
 						  8};
-		optimizer->estimatePose(source, target, currentCameraToWorld, avg_metric);
+
+		// TODO(oleg): fix this in the next commits.
+		Matrix4f dummyGroundTruth = Matrix4f::Identity();
+		optimizer->estimatePose(source, target, currentCameraToWorld, dummyGroundTruth);
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
@@ -156,14 +154,6 @@ int runSequenceICP(const ICPConfiguration &config)
 		i++;
 	}
 
-	std::ofstream file;
-	file.open("./metric_room.txt");
-	for (int k = 0; k < avg_metric.size(); k++)
-	{
-		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << "," << avg_metric[k][2] / i << std::endl;
-	}
-	file.close();
-
 	delete optimizer;
 
 	return 0;
@@ -178,7 +168,7 @@ int main(int argc, char *argv[])
 	}
 
 	// TODO(oleg): directory should be in argv.
-	const std::string directoryPath = std::string("../Data/greyc_partial_debug/"); // Two partially complete meshes.
+	const std::string directoryPath = std::string("../Data/greyc_partial/"); // Two partially complete meshes.
 	// const std::string directoryPath = std::string("../Data/greyc_debug/"); // Two complete meshes.
 
 	// Load config from file.

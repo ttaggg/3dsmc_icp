@@ -40,16 +40,16 @@ void visualize(std::string filenameOutput)
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
+                     Matrix4f &gtTransform,
                      ICPOptimizer *optimizer,
-                     std::string filenameOutput,
-                     std::vector<std::vector<double>> &metric)
+                     std::string filenameOutput)
 {
 
     PointCloud source{sourceMesh};
     PointCloud target{targetMesh};
 
     Matrix4f estimatedPose = Matrix4f::Identity();
-    optimizer->estimatePose(source, target, estimatedPose, metric);
+    optimizer->estimatePose(source, target, estimatedPose, gtTransform);
 
     // Visualize the resulting joined mesh. We add triangulated spheres for point matches.
     SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
