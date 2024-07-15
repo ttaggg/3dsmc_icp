@@ -1,27 +1,24 @@
 #pragma once
 
-#include <random>
-
-#include <cmath>
-
-#include "DataLoader.h"
-#include "ICPOptimizer.h"
-#include "PointCloud.h"
-
-#define OPEN3D_ENABLED 1
-#ifndef OPEN3D_ENABLED 1
-#include <Open3D/Open3D.h>
-#endif
+#include <random>           // for mt19937
+#include <initializer_list> // for initializer_list
+#include <memory>           // for unique_ptr
+#include <string>           // for string
+#include "Eigen.h"
 
 class DataLoader;
 class ICPOptimizer;
+class ICPConfiguration;
 class SimpleMesh;
 
 bool containsSubstring(const std::string &str, const std::string &substring);
 
 std::string formatString(std::initializer_list<std::string> elements);
 
+#define OPEN3D_ENABLED
+#ifdef OPEN3D_ENABLED
 void visualize(std::string filenameOutput);
+#endif
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,

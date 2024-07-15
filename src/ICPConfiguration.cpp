@@ -1,4 +1,10 @@
 #include "ICPConfiguration.h"
+#include <stdlib.h>        // for exit
+#include <cassert>         // for assert
+#include <exception>       // for exception
+#include <iostream>        // for basic_ostream, endl, operator<<
+#include <stdexcept>       // for runtime_error
+#include <yaml-cpp/yaml.h> // for yaml
 
 void ICPConfiguration::_loadFromYaml(const std::string &filename)
 {

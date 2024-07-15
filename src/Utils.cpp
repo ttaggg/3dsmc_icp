@@ -1,4 +1,18 @@
 #include "Utils.h"
+#include <cmath>              // for M_PI
+#include <iostream>           // for basic_ostream
+#include <sstream>            // for basic_ostringst...
+#include <utility>            // for move
+#include "DataLoader.h"       // for MeshDataLoader
+#include "ICPConfiguration.h" // for ICPConfiguration
+#include "ICPOptimizer.h"     // for ICPOptimizer
+#include "PointCloud.h"       // for PointCloud
+#include "SimpleMesh.h"       // for SimpleMesh
+#include "Eigen.h"
+
+#ifdef OPEN3D_ENABLED
+#include <Open3D/Open3D.h>
+#endif
 
 bool containsSubstring(const std::string &str, const std::string &substring)
 {
@@ -16,7 +30,8 @@ std::string formatString(std::initializer_list<std::string> elements)
     return oss.str();
 }
 
-#ifndef OPEN3D_ENABLED 1
+#define OPEN3D_ENABLED
+#ifdef OPEN3D_ENABLED
 void visualize(std::string filenameOutput)
 {
 

@@ -1,4 +1,14 @@
 #include "ICPOptimizer.h"
+#include <iostream>            // for basic_o...
+#include <math.h>              // for M_PI
+#include <stdlib.h>            // for exit
+#include <time.h>              // for clock
+#include <algorithm>           // for fill_n
+#include <utility>             // for move, swap
+#include "Constraints.h"       // for PoseInc...
+#include "Eigen.h"             // for Eigen
+#include "Evaluator.h"         // for Evaluator
+#include "ProcrustesAligner.h" // for Procrus...
 
 /**
  * ICP optimizer - Abstract Base Class

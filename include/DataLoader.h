@@ -1,14 +1,11 @@
 #pragma once
 
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <iostream>
-#include "SimpleMesh.h"
-#include "ICPOptimizer.h"
-#include "SimpleMesh.h"
-#include "PointCloud.h"
-#include "Utils.h"
+#include <stddef.h> // for size_t
+#include <string>   // for basic_string, string
+#include <vector>   // for vector
+#include "Eigen.h"  // Eigen
+
+class SimpleMesh;
 
 class DataLoader
 {

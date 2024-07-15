@@ -1,11 +1,9 @@
 #pragma once
 
-#include <string>
-#include <vector>
+#include <string>  // for string
+#include <vector>  // for vector
+#include "Eigen.h" // for Matrix4f
 
-#include "Eigen.h"
-
-class DataLoader;
 class ICPConfiguration;
 class Match;
 class PointCloud;

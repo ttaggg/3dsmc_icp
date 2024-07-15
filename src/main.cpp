@@ -1,19 +1,20 @@
-#include <iostream>
-#include <fstream>
-#include "VirtualSensor.h"
-#include "SimpleMesh.h"
-#include "ICPOptimizer.h"
-#include "ICPConfiguration.h"
-#include "PointCloud.h"
-#include "DataLoader.h"
-#include "Utils.h"
-#include "Evaluator.h"
+#include <stddef.h>			  // for size_t
+#include <iostream>			  // for char_traits
+#include <memory>			  // for unique_ptr
+#include <random>			  // for mt19937
+#include <string>			  // for basic_string
+#include "DataLoader.h"		  // for DataLoader
+#include "Eigen.h"			  // for vector
+#include "Evaluator.h"		  // for Evaluator
+#include "ICPConfiguration.h" // for ICPConfiguration
+#include "ICPOptimizer.h"	  // for ICPOptimizer
+#include "PointCloud.h"		  // for PointCloud
+#include "SimpleMesh.h"		  // for SimpleMesh
+#include "Utils.h"			  // for createOptimizer
+#include "VirtualSensor.h"	  // for VirtualSensor
 
-#define MESH_ENABLED 1
-#define OPEN3D_ENABLED 1
-#ifndef OPEN3D_ENABLED 1
-#include <Open3D/Open3D.h>
-#endif
+#define OPEN3D_ENABLED
+#define MESH_ENABLED
 
 int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 {
@@ -56,7 +57,7 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 						dataloader->getName(i));
 		evaluator.reset();
 
-#ifndef OPEN3D_ENABLED 1
+#ifdef OPEN3D_ENABLED
 		if (config.visualize)
 		{
 			visualize(filenameOutput);
@@ -132,7 +133,7 @@ int runSequenceICP(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
-#ifndef MESH_ENABLED 1
+#ifdef MESH_ENABLED
 		if (i % 3 == 0)
 		{
 			// We write out the mesh to file for debugging.

@@ -1,7 +1,18 @@
 #pragma once
 
-#include <flann/flann.hpp>
-#include "Eigen.h"
+#include <vector>  // for vector
+#include "Eigen.h" // for vector, MINF
+
+namespace flann
+{
+	template <class T>
+	struct L2;
+}
+namespace flann
+{
+	template <typename Distance>
+	class Index;
+}
 
 struct Match
 {

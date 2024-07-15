@@ -1,4 +1,8 @@
 #include "DataLoader.h"
+#include <filesystem>   // for directory_iterator, path, directory_entry
+#include <iostream>     // for basic_ostream, operator<<, endl, cerr, cout
+#include "SimpleMesh.h" // for SimpleMesh
+#include "Utils.h"      // for formatString
 
 size_t DataLoader::size()
 {

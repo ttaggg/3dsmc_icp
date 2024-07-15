@@ -1,4 +1,14 @@
-#include "Search.h"
+
+#include <stddef.h>                        // for size_t
+#include <iostream>                        // for basic_ostream
+#include <utility>                         // for move
+#include "flann/algorithms/dist.h"         // for L2
+#include "flann/algorithms/kdtree_index.h" // for KDTreeIndexParams
+#include "flann/flann.hpp"                 // for Index
+#include "flann/util/matrix.h"             // for Matrix
+#include "flann/util/params.h"             // for SearchParams
+#include "Eigen.h"                         // for MatrixBase::bin...
+#include "Search.h"                        // for MatrixBase::bin...
 
 Search::Search() : m_maxDistance{0.005f} {}
 

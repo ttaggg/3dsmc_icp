@@ -1,8 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <cassert>
-#include <yaml-cpp/yaml.h>
+#include <string> // for basic_string, string
 
 /**
  * enum for correspondence method: nearest neighbor or projective

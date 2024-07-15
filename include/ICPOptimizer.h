@@ -3,17 +3,17 @@
 // The Google logging library (GLOG), used in Ceres, has a conflict with Windows defined constants. This definitions prevents GLOG to use the same constants
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
-#include <flann/flann.hpp>
+#include <ceres/ceres.h>      // for Solver
+#include <memory>             // for unique_ptr
+#include <vector>             // for vector
+#include "Eigen.h"            // for vector
+#include "ICPConfiguration.h" // for CorrMethod
+#include "PointCloud.h"       // for PointCloud
+#include "Search.h"           // for Match (ptr only), Search
 
-#include "SimpleMesh.h"
-#include "Search.h"
-#include "PointCloud.h"
-#include "Constraints.h"
-#include "ProcrustesAligner.h"
-#include "ICPConfiguration.h"
-#include "Evaluator.h"
+class Evaluator;
+template <typename T>
+class PoseIncrement;
 
 /**
  * ICP optimizer - Abstract Base Class
