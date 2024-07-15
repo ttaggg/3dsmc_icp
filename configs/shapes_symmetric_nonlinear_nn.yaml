@@ -11,7 +11,8 @@ matchingMaxDistance: 1
 nbOfIterations: 10
 visualize: false
 
-evaluate_rmse_naive: true
-evaluate_rmse_nn: true
-evaluate_rmse_nn_plane: true
-evaluate_transforms: true
+evaluateRMSENaive: true
+evaluateRMSENearest: true
+evaluateRMSENearestPlane: true
+evaluateTransforms: true
+evaluateTime: true

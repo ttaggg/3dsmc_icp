@@ -28,7 +28,11 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 	ICPOptimizer *optimizer = createOptimizer(config);
 
 	Evaluator evaluator(config);
-	bool evaluate = (config.evaluate_rmse_naive || config.evaluate_rmse_nn || config.evaluate_transforms);
+	bool evaluate = (config.evaluateTime ||
+					 config.evaluateTransforms ||
+					 config.evaluateRMSENaive ||
+					 config.evaluateRMSENearest ||
+					 config.evaluateRMSENearestPlane);
 	if (evaluate)
 	{
 		optimizer->setEvaluator(&evaluator);
@@ -52,8 +56,8 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 									optimizer,
 									filenameOutput);
 
-		evaluator.write(config.output_dir,
-						config.experiment_name,
+		evaluator.write(config.outputDir,
+						config.experimentName,
 						dataloader->getName(i));
 		evaluator.reset();
 

@@ -37,14 +37,14 @@ public:
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;
     bool visualize = false;
-    bool evaluate_rmse_naive = false;
-    bool evaluate_rmse_nn = false;
-    bool evaluate_rmse_nn_plane = false;
-    bool evaluate_transforms = false;
-    bool evaluate_time = false;
+    bool evaluateRMSENaive = false;
+    bool evaluateRMSENearest = false;
+    bool evaluateRMSENearestPlane = false;
+    bool evaluateTransforms = false;
+    bool evaluateTime = false;
     // Experiment
-    std::string experiment_name = "default";
-    std::string output_dir = ".";
+    std::string experimentName = "default";
+    std::string outputDir = ".";
 
     void loadFromYaml(const std::string &filename);
     void show();

@@ -2,6 +2,8 @@
 #include <cmath>              // for M_PI
 #include <iostream>           // for basic_ostream
 #include <sstream>            // for basic_ostringst...
+#include <sys/stat.h>         //
+#include <sys/types.h>        //
 #include <utility>            // for move
 #include "DataLoader.h"       // for MeshDataLoader
 #include "ICPConfiguration.h" // for ICPConfiguration
@@ -147,5 +149,46 @@ std::unique_ptr<DataLoader> createDataloader(const std::string &directoryPath)
     else
     {
         return std::make_unique<MeshDataLoader>();
+    }
+}
+
+bool _directoryExists(const std::string &path)
+{
+    struct stat info;
+
+    if (stat(path.c_str(), &info) != 0)
+    {
+        return false;
+    }
+    else if (info.st_mode & S_IFDIR)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool _createDirectory(const std::string &path)
+{
+#if defined(_WIN32)
+    int ret = _mkdir(path.c_str());
+#else
+    mode_t mode = 0755; // Default mode
+    int ret = mkdir(path.c_str(), mode);
+#endif
+    return (ret == 0);
+}
+
+bool ensureDirectoryExists(const std::string &path)
+{
+    if (_directoryExists(path))
+    {
+        return true;
+    }
+    else
+    {
+        return _createDirectory(path);
     }
 }

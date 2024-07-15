@@ -10,21 +10,21 @@
 
 Evaluator::Evaluator(const ICPConfiguration &config)
 {
-    eval_rmse_naive = config.evaluate_rmse_naive;
-    eval_rmse_nn = config.evaluate_rmse_nn;
-    eval_rmse_nn_plane = config.evaluate_rmse_nn_plane;
-    eval_transforms = config.evaluate_transforms;
-    eval_time = config.evaluate_time;
+    evaluateRMSENaive = config.evaluateRMSENaive;
+    evaluateRMSENearest = config.evaluateRMSENearest;
+    evaluateRMSENearestPlane = config.evaluateRMSENearestPlane;
+    evaluateTransforms = config.evaluateTransforms;
+    evaluateTime = config.evaluateTime;
 }
 
 void Evaluator::reset()
 {
-    rmse_naive_metric.clear();
-    rmse_nn_metric.clear();
-    rmse_nn_plane_metric.clear();
-    time_metric.clear();
-    rotation_metric.clear();
-    translation_metric.clear();
+    rmseNaiveMetric.clear();
+    rmseNearestMetric.clear();
+    rmseNearestPlaneMetric.clear();
+    timeMetric.clear();
+    rotationMetric.clear();
+    translationMetric.clear();
 }
 
 void Evaluator::addMetrics(double elapsedSecs,
@@ -34,34 +34,34 @@ void Evaluator::addMetrics(double elapsedSecs,
                            Matrix4f &estimatedPose,
                            Matrix4f &groundPose)
 {
-    if (eval_rmse_naive)
+    if (evaluateRMSENaive)
         _NaiveRMSE(
             source,
             target,
             estimatedPose);
-    if (eval_rmse_nn)
+    if (evaluateRMSENearest)
         _PointToPointComputeRMSE(source,
                                  target,
                                  matches,
                                  estimatedPose);
-    if (eval_rmse_nn_plane)
+    if (evaluateRMSENearestPlane)
         _PointToPlaneComputeRMSE(source,
                                  target,
                                  matches,
                                  estimatedPose);
-    if (eval_transforms)
+    if (evaluateTransforms)
         _evalTransforms(estimatedPose, groundPose);
-    if (eval_time)
-        time_metric.push_back(elapsedSecs);
+    if (evaluateTime)
+        timeMetric.push_back(elapsedSecs);
 }
 
-void Evaluator::_evalTransforms(Matrix4f &transform, Matrix4f &ground_truth)
+void Evaluator::_evalTransforms(Matrix4f &transform, Matrix4f &groundTruth)
 {
     Matrix3f rotation_pred = transform.block(0, 0, 3, 3);
     Vector3f translation_pred = transform.block(0, 3, 3, 1);
 
-    Matrix3f rotation_ground = ground_truth.block(0, 0, 3, 3);
-    Vector3f translation_ground = ground_truth.block(0, 3, 3, 1);
+    Matrix3f rotation_ground = groundTruth.block(0, 0, 3, 3);
+    Vector3f translation_ground = groundTruth.block(0, 3, 3, 1);
 
     // RMSE for translation
     Vector3f translation_error = translation_pred - translation_ground;
@@ -71,8 +71,8 @@ void Evaluator::_evalTransforms(Matrix4f &transform, Matrix4f &ground_truth)
     Matrix3f near_id = Matrix3f::Identity() - rotation_pred * rotation_ground.transpose();
     double rotation_frobenius_norm = near_id.norm();
 
-    translation_metric.push_back(translation_rmse);
-    rotation_metric.push_back(rotation_frobenius_norm);
+    translationMetric.push_back(translation_rmse);
+    rotationMetric.push_back(rotation_frobenius_norm);
 }
 
 void Evaluator::_NaiveRMSE(
@@ -95,7 +95,7 @@ void Evaluator::_NaiveRMSE(
         auto pt_trans = (transformation * Vector4f(sp(0), sp(1), sp(2), 1.0)).block<3, 1>(0, 0);
         err += (pt_trans - tp).squaredNorm();
     }
-    rmse_naive_metric.push_back(std::sqrt(err / (double)source_p.size()));
+    rmseNaiveMetric.push_back(std::sqrt(err / (double)source_p.size()));
 }
 
 void Evaluator::_PointToPointComputeRMSE(
@@ -129,7 +129,7 @@ void Evaluator::_PointToPointComputeRMSE(
         }
         i++;
     }
-    rmse_nn_metric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
+    rmseNearestMetric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
 }
 
 void Evaluator::_PointToPlaneComputeRMSE(
@@ -164,58 +164,58 @@ void Evaluator::_PointToPlaneComputeRMSE(
         }
         i++;
     }
-    rmse_nn_plane_metric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
+    rmseNearestPlaneMetric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
 }
 
-void Evaluator::write(std::string output_dir,
-                      std::string experiment_name,
-                      std::string mesh_name)
+void Evaluator::write(std::string outputDir,
+                      std::string experimentName,
+                      std::string meshName)
 {
     // Here we write csvs for each method used into the output_dir
 
-    if (eval_rmse_naive)
+    if (evaluateRMSENaive)
     {
-        std::string metric_path = formatString({output_dir, "/",
-                                                experiment_name, "_", mesh_name, "_rmse_naive_metric.txt"});
-        _write_metric(rmse_naive_metric, metric_path);
+        std::string metricPath = formatString({outputDir, "/",
+                                               experimentName, "_", meshName, "_rmse_naive_metric.txt"});
+        _write_metric(rmseNaiveMetric, metricPath);
     }
 
-    if (eval_rmse_nn)
+    if (evaluateRMSENearest)
     {
-        std::string metric_path = formatString({output_dir, "/",
-                                                experiment_name, "_", mesh_name, "_rmse_nn_metric.txt"});
-        _write_metric(rmse_nn_metric, metric_path);
+        std::string metricPath = formatString({outputDir, "/",
+                                               experimentName, "_", meshName, "_rmse_nn_metric.txt"});
+        _write_metric(rmseNearestMetric, metricPath);
     }
 
-    if (eval_rmse_nn_plane)
+    if (evaluateRMSENearestPlane)
     {
-        std::string metric_path = formatString({output_dir, "/",
-                                                experiment_name, "_", mesh_name, "_rmse_nn_plane_metric.txt"});
-        _write_metric(rmse_nn_plane_metric, metric_path);
+        std::string metricPath = formatString({outputDir, "/",
+                                               experimentName, "_", meshName, "_rmse_nn_plane_metric.txt"});
+        _write_metric(rmseNearestPlaneMetric, metricPath);
     }
 
-    if (eval_transforms)
+    if (evaluateTransforms)
     {
-        std::string metric_path_r = formatString({output_dir, "/",
-                                                  experiment_name, "_", mesh_name, "_eval_r.txt"});
-        _write_metric(rotation_metric, metric_path_r);
-        std::string metric_path_t = formatString({output_dir, "/",
-                                                  experiment_name, "_", mesh_name, "_eval_t.txt"});
-        _write_metric(translation_metric, metric_path_t);
+        std::string metricPathR = formatString({outputDir, "/",
+                                                experimentName, "_", meshName, "_eval_r.txt"});
+        _write_metric(rotationMetric, metricPathR);
+        std::string metricPathT = formatString({outputDir, "/",
+                                                experimentName, "_", meshName, "_eval_t.txt"});
+        _write_metric(translationMetric, metricPathT);
     }
 
-    if (eval_time)
+    if (evaluateTime)
     {
-        std::string metric_path = formatString({output_dir, "/",
-                                                experiment_name, "_", mesh_name, "_time_metric.txt"});
-        _write_metric(time_metric, metric_path);
+        std::string metricPath = formatString({outputDir, "/",
+                                               experimentName, "_", meshName, "_time_metric.txt"});
+        _write_metric(timeMetric, metricPath);
     }
 }
 
-void Evaluator::_write_metric(std::vector<double> &metric, std::string metric_path)
+void Evaluator::_write_metric(std::vector<double> &metric, std::string metricPath)
 {
     std::ofstream file;
-    file.open(metric_path);
+    file.open(metricPath);
     for (int i = 0; i < metric.size(); i++)
     {
         file << i + 1 << "," << metric[i] << std::endl;

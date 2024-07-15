@@ -31,3 +31,7 @@ Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_t
 ICPOptimizer *createOptimizer(const ICPConfiguration &config);
 
 std::unique_ptr<DataLoader> createDataloader(const std::string &directoryPath);
+
+bool _directoryExists(const std::string &path);
+bool _createDirectory(const std::string &path);
+bool ensureDirectoryExists(const std::string &path);

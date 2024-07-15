@@ -91,37 +91,37 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
         visualize = config["visualize"].as<bool>();
     }
 
-    if (config["evaluate_rmse_naive"])
+    if (config["evaluateRMSENaive"])
     {
-        evaluate_rmse_naive = config["evaluate_rmse_naive"].as<bool>();
+        evaluateRMSENaive = config["evaluateRMSENaive"].as<bool>();
     }
 
-    if (config["evaluate_rmse_nn"])
+    if (config["evaluateRMSENearest"])
     {
-        evaluate_rmse_nn = config["evaluate_rmse_nn"].as<bool>();
+        evaluateRMSENearest = config["evaluateRMSENearest"].as<bool>();
     }
 
-    if (config["evaluate_rmse_nn_plane"])
+    if (config["evaluateRMSENearestPlane"])
     {
-        evaluate_rmse_nn_plane = config["evaluate_rmse_nn_plane"].as<bool>();
+        evaluateRMSENearestPlane = config["evaluateRMSENearestPlane"].as<bool>();
     }
 
-    if (config["evaluate_transforms"])
+    if (config["evaluateTransforms"])
     {
-        evaluate_transforms = config["evaluate_transforms"].as<bool>();
+        evaluateTransforms = config["evaluateTransforms"].as<bool>();
     }
-    if (config["evaluate_time"])
+    if (config["evaluateTime"])
     {
-        evaluate_time = config["evaluate_time"].as<bool>();
+        evaluateTime = config["evaluateTime"].as<bool>();
     }
 
-    if (config["experiment_name"])
+    if (config["experimentName"])
     {
-        experiment_name = config["experiment_name"].as<std::string>();
+        experimentName = config["experimentName"].as<std::string>();
     }
-    if (config["output_dir"])
+    if (config["outputDir"])
     {
-        output_dir = config["output_dir"].as<std::string>();
+        outputDir = config["outputDir"].as<std::string>();
     }
 }
 
@@ -194,9 +194,11 @@ void ICPConfiguration::show()
     std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
     std::cout << "nbOfIterations: " << nbOfIterations << std::endl;
     std::cout << "Visualization: " << visualize << std::endl;
-    std::cout << "Evaluate RMSE naive: " << evaluate_rmse_naive << std::endl;
-    std::cout << "Evaluate RMSE NN: " << evaluate_rmse_nn << std::endl;
-    std::cout << "Evaluate transforms: " << evaluate_transforms << std::endl;
+    std::cout << "Evaluate RMSE naive: " << evaluateRMSENaive << std::endl;
+    std::cout << "Evaluate RMSE NN: " << evaluateRMSENearest << std::endl;
+    std::cout << "Evaluate RMSE Plane: " << evaluateRMSENearestPlane << std::endl;
+    std::cout << "Evaluate transforms: " << evaluateTransforms << std::endl;
+    std::cout << "Evaluate time: " << evaluateTime << std::endl;
 
     std::cout << "============================" << std::endl;
 

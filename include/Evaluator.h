@@ -14,23 +14,23 @@ public:
     Evaluator() {};
     Evaluator(const ICPConfiguration &config);
 
-    std::vector<double> rmse_naive_metric;
-    std::vector<double> rmse_nn_metric;
-    std::vector<double> rmse_nn_plane_metric;
-    std::vector<double> time_metric;
-    std::vector<double> rotation_metric;
-    std::vector<double> translation_metric;
+    std::vector<double> rmseNaiveMetric;
+    std::vector<double> rmseNearestMetric;
+    std::vector<double> rmseNearestPlaneMetric;
+    std::vector<double> timeMetric;
+    std::vector<double> rotationMetric;
+    std::vector<double> translationMetric;
 
-    bool eval_rmse_naive;
-    bool eval_rmse_nn;
-    bool eval_rmse_nn_plane;
-    bool eval_transforms;
-    bool eval_time;
+    bool evaluateRMSENaive;
+    bool evaluateRMSENearest;
+    bool evaluateRMSENearestPlane;
+    bool evaluateTransforms;
+    bool evaluateTime;
 
     void reset();
-    void write(std::string output_dir,
-               std::string experiment_name,
-               std::string mesh_name);
+    void write(std::string outputDir,
+               std::string experimentName,
+               std::string meshName);
 
     void addMetrics(double elapsedSecs,
                     const PointCloud &source,
@@ -40,8 +40,8 @@ public:
                     Matrix4f &groundPose);
 
 private:
-    void _write_metric(std::vector<double> &metric, std::string metric_path);
-    void _evalTransforms(Matrix4f &transform, Matrix4f &ground_truth);
+    void _write_metric(std::vector<double> &metric, std::string metricPath);
+    void _evalTransforms(Matrix4f &transform, Matrix4f &groundTruth);
     void _PointToPointComputeRMSE(
         const PointCloud &source,
         const PointCloud &target,
