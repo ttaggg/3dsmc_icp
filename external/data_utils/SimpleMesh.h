@@ -350,7 +350,10 @@ public:
 	 * Joins two meshes together by putting them into the common mesh and transforming the vertex positions of
 	 * mesh1 with transformation 'pose1to2'.
 	 */
-	static SimpleMesh joinMeshes(const SimpleMesh &mesh1, const SimpleMesh &mesh2, Matrix4f pose1to2 = Matrix4f::Identity())
+	static SimpleMesh joinMeshes(const SimpleMesh &mesh1,
+								 const SimpleMesh &mesh2,
+								 Matrix4f pose1to2 = Matrix4f::Identity(),
+								 bool saveColor = false)
 	{
 		SimpleMesh joinedMesh;
 		const auto &vertices1 = mesh1.getVertices();
@@ -376,7 +379,15 @@ public:
 			const auto &v1 = vertices1[i];
 			Vertex v;
 			v.position = pose1to2 * v1.position;
-			v.color = Vector4uc(0, 255, 0, 0);
+			// Substitute color if we want to emphasize difference on aligned meshes.
+			if (saveColor)
+			{
+				v.color = v1.color;
+			}
+			else
+			{
+				v.color = Vector4uc(0, 255, 0, 0);
+			}
 			joinedVertices.push_back(v);
 		}
 		for (int i = 0; i < nVertices2; ++i)
@@ -384,7 +395,14 @@ public:
 			const auto &v2 = vertices2[i];
 			Vertex v;
 			v.position = v2.position;
-			v.color = Vector4uc(255, 0, 0, 0);
+			if (saveColor)
+			{
+				v.color = v2.color;
+			}
+			else
+			{
+				v.color = Vector4uc(255, 0, 0, 0);
+			}
 			joinedVertices.push_back(v);
 		}
 		// Add all faces (the indices of the second mesh need to be added an offset).

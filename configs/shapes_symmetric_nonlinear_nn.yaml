@@ -8,7 +8,7 @@ useSymmetric: true
 correspondenceMethod: NN
 # Other settings
 matchingMaxDistance: 1
-nbOfIterations: 10
+nbOfIterations: 20
 visualize: false
 
 evaluateRMSENaive: true # doesn't make sense for partial

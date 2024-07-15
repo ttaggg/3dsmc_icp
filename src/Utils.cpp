@@ -10,6 +10,7 @@
 #include "ICPOptimizer.h"     // for ICPOptimizer
 #include "PointCloud.h"       // for PointCloud
 #include "SimpleMesh.h"       // for SimpleMesh
+#include "VirtualSensor.h"    // for VirtualSensor
 #include "Eigen.h"
 
 #ifdef OPEN3D_ENABLED
@@ -140,5 +141,25 @@ std::unique_ptr<DataLoader> createDataloader(const std::string &directoryPath)
     else
     {
         return std::make_unique<MeshDataLoader>();
+    }
+}
+
+void writeRoomMesh(VirtualSensor &sensor, Matrix4f &currentCameraPose, fs::path outputDir)
+{
+    fs::create_directories(outputDir);
+
+    SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+    SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+    SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh,
+                                                      currentCameraMesh,
+                                                      Matrix4f::Identity(),
+                                                      true);
+
+    fs::path outputMeshPath = outputDir / fs::path{std::to_string(sensor.getCurrentFrameCnt()) + ".off"};
+
+    if (!resultingMesh.writeMesh(outputMeshPath))
+    {
+        std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+        return;
     }
 }

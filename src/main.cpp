@@ -84,13 +84,11 @@ int runShapeICP(const ICPConfiguration &config)
 
 int runSequenceICP(const ICPConfiguration &config)
 {
-	std::string filenameIn = std::string("../../Data/rgbd_dataset_freiburg1_xyz/");
-	std::string filenameBaseOut = std::string("mesh_");
 
 	// Load video
 	std::cout << "Initialize virtual sensor..." << std::endl;
 	VirtualSensor sensor;
-	if (!sensor.init(filenameIn))
+	if (!sensor.init(config.dataDir))
 	{
 		std::cout << "Failed to initialize the sensor!\nCheck file path!" << std::endl;
 		return -1;
@@ -110,15 +108,28 @@ int runSequenceICP(const ICPConfiguration &config)
 	// Setup the optimizer.
 	ICPOptimizer *optimizer = createOptimizer(config);
 
-	// We store the estimated camera poses.
-	std::vector<Matrix4f> estimatedPoses;
-	Matrix4f currentCameraToWorld = Matrix4f::Identity();
-	estimatedPoses.push_back(currentCameraToWorld.inverse());
+	Evaluator evaluator(config);
+	bool evaluate = (config.evaluateTime ||
+					 config.evaluateTransforms ||
+					 config.evaluateRMSENaive ||
+					 config.evaluateRMSENearest ||
+					 config.evaluateRMSENearestPlane);
+	if (evaluate)
+	{
+		optimizer->setEvaluator(&evaluator);
+	}
 
-	// std::vector<std::vector<double>> avg_metric;
+	fs::path outputDir = "." / fs::path{config.experimentName};
+	fs::create_directories(outputDir);
+
+	// We store the estimated camera poses.
+	Matrix4f currentCameraToWorld = Matrix4f::Identity();
+	Matrix4f initTrajectory = sensor.getTrajectory();
+	Matrix4f groundTruth;
+	Matrix4f currentTrajectory;
 
 	int i = 0;
-	const int iMax = 50;
+	const int iMax = 30;
 	while (sensor.processNextFrame() && i <= iMax)
 	{
 		float *depthMap = sensor.getDepth();
@@ -135,35 +146,25 @@ int runSequenceICP(const ICPConfiguration &config)
 						  sensor.getColorRGBX(),
 						  8};
 
-		// TODO(oleg): fix this in the next commits.
-		Matrix4f dummyGroundTruth = Matrix4f::Identity();
-		optimizer->estimatePose(source, target, currentCameraToWorld, dummyGroundTruth);
+		currentTrajectory = sensor.getTrajectory();
+		groundTruth = (initTrajectory * currentTrajectory.inverse());
+		optimizer->estimatePose(source,
+								target,
+								currentCameraToWorld,
+								groundTruth);
+
+		evaluator.write(outputDir / fs::path{std::to_string(sensor.getCurrentFrameCnt())});
+		evaluator.reset();
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
 		std::cout << "Current camera pose: " << std::endl
 				  << currentCameraPose << std::endl;
-		estimatedPoses.push_back(currentCameraPose);
 
 #ifdef MESH_ENABLED
 		if (i % 3 == 0)
-		{
-			// We write out the mesh to file for debugging.
-			SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
-			SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
-			SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh, currentCameraMesh, Matrix4f::Identity());
-
-			std::stringstream ss;
-			ss << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off";
-			std::cout << filenameBaseOut << sensor.getCurrentFrameCnt() << ".off" << std::endl;
-			if (!resultingMesh.writeMesh(ss.str()))
-			{
-				std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-				return -1;
-			}
-		}
+			writeRoomMesh(sensor, currentCameraPose, outputDir / fs::path{"meshes"});
 #endif
-
 		i++;
 	}
 

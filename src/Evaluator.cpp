@@ -172,6 +172,7 @@ void Evaluator::_PointToPlaneComputeRMSE(
 void Evaluator::write(fs::path outputDir)
 {
     // Here we write csvs for each method used into the outputDir.
+    fs::create_directories(outputDir);
 
     if (evaluateRMSENaive)
     {
