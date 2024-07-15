@@ -403,7 +403,7 @@ Matrix4f LinearICPOptimizer::
         b(4 * i + 3) = n.transpose() * diff;
     }
 
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+    CompleteOrthogonalDecomposition<MatrixXf> cod(A);
     VectorXf x = cod.solve(b);
 
     float alpha = x(0), beta = x(1), gamma = x(2);
@@ -462,7 +462,7 @@ Matrix4f LinearICPOptimizer::estimatePoseSymmetric(const std::vector<Vector3f> &
         b(4 * i + 3) = normalSum.transpose() * diff;
     }
 
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+    CompleteOrthogonalDecomposition<MatrixXf> cod(A);
     VectorXf x = cod.solve(b);
 
     float alpha = x(0), beta = x(1), gamma = x(2);

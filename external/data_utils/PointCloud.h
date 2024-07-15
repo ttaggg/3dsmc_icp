@@ -185,14 +185,14 @@ public:
 
             for (unsigned int i = 0; i < n; i++)
             {
-                Eigen::Vector3f p(ps[3 * i + 0], ps[3 * i + 1], ps[3 * i + 2]);
+                Vector3f p(ps[3 * i + 0], ps[3 * i + 1], ps[3 * i + 2]);
                 m_points.push_back(p);
             }
 
             is.read((char *)ps, 3 * sizeof(float) * n);
             for (unsigned int i = 0; i < n; i++)
             {
-                Eigen::Vector3f p(ps[3 * i + 0], ps[3 * i + 1], ps[3 * i + 2]);
+                Vector3f p(ps[3 * i + 0], ps[3 * i + 1], ps[3 * i + 2]);
                 m_normals.push_back(p);
             }
 
@@ -206,7 +206,7 @@ public:
 
             for (unsigned int i = 0; i < n; i++)
             {
-                Eigen::Vector3f p((float)ps[3 * i + 0], (float)ps[3 * i + 1], (float)ps[3 * i + 2]);
+                Vector3f p((float)ps[3 * i + 0], (float)ps[3 * i + 1], (float)ps[3 * i + 2]);
                 m_points.push_back(p);
             }
 
@@ -214,7 +214,7 @@ public:
 
             for (unsigned int i = 0; i < n; i++)
             {
-                Eigen::Vector3f p((float)ps[3 * i + 0], (float)ps[3 * i + 1], (float)ps[3 * i + 2]);
+                Vector3f p((float)ps[3 * i + 0], (float)ps[3 * i + 1], (float)ps[3 * i + 2]);
                 m_normals.push_back(p);
             }
 

@@ -131,12 +131,12 @@ public:
 	}
 
 	// color camera info
-	Eigen::Matrix3f getColorIntrinsics()
+	Matrix3f getColorIntrinsics()
 	{
 		return m_colorIntrinsics;
 	}
 
-	Eigen::Matrix4f getColorExtrinsics()
+	Matrix4f getColorExtrinsics()
 	{
 		return m_colorExtrinsics;
 	}
@@ -152,12 +152,12 @@ public:
 	}
 
 	// depth (ir) camera info
-	Eigen::Matrix3f getDepthIntrinsics()
+	Matrix3f getDepthIntrinsics()
 	{
 		return m_depthIntrinsics;
 	}
 
-	Eigen::Matrix4f getDepthExtrinsics()
+	Matrix4f getDepthExtrinsics()
 	{
 		return m_depthExtrinsics;
 	}
@@ -173,7 +173,7 @@ public:
 	}
 
 	// get current trajectory transformation
-	Eigen::Matrix4f getTrajectory()
+	Matrix4f getTrajectory()
 	{
 		return m_currentTrajectory;
 	}
@@ -205,7 +205,7 @@ private:
 		return true;
 	}
 
-	bool readTrajectoryFile(const std::string &filename, std::vector<Eigen::Matrix4f> &result,
+	bool readTrajectoryFile(const std::string &filename, std::vector<Matrix4f> &result,
 							std::vector<double> &timestamps)
 	{
 		std::ifstream file(filename, std::ios::in);
@@ -221,12 +221,12 @@ private:
 		{
 			double timestamp;
 			file >> timestamp;
-			Eigen::Vector3f translation;
+			Vector3f translation;
 			file >> translation.x() >> translation.y() >> translation.z();
-			Eigen::Quaternionf rot;
+			Quaternionf rot;
 			file >> rot;
 
-			Eigen::Matrix4f transf;
+			Matrix4f transf;
 			transf.setIdentity();
 			transf.block<3, 3>(0, 0) = rot.toRotationMatrix();
 			transf.block<3, 1>(0, 3) = translation;
@@ -253,17 +253,17 @@ private:
 	// frame data
 	float *m_depthFrame;
 	BYTE *m_colorFrame;
-	Eigen::Matrix4f m_currentTrajectory;
+	Matrix4f m_currentTrajectory;
 
 	// color camera info
-	Eigen::Matrix3f m_colorIntrinsics;
-	Eigen::Matrix4f m_colorExtrinsics;
+	Matrix3f m_colorIntrinsics;
+	Matrix4f m_colorExtrinsics;
 	unsigned int m_colorImageWidth;
 	unsigned int m_colorImageHeight;
 
 	// depth (ir) camera info
-	Eigen::Matrix3f m_depthIntrinsics;
-	Eigen::Matrix4f m_depthExtrinsics;
+	Matrix3f m_depthIntrinsics;
+	Matrix4f m_depthExtrinsics;
 	unsigned int m_depthImageWidth;
 	unsigned int m_depthImageHeight;
 
@@ -277,6 +277,6 @@ private:
 	std::vector<double> m_colorImagesTimeStamps;
 
 	// trajectory
-	std::vector<Eigen::Matrix4f> m_trajectory;
+	std::vector<Matrix4f> m_trajectory;
 	std::vector<double> m_trajectoryTimeStamps;
 };

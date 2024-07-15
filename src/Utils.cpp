@@ -77,17 +77,17 @@ Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_t
     float angle_z_rad = angle_z * M_PI / 180.0f;
 
     // Generate rotation matrices
-    Eigen::Matrix3f rotation_x;
-    rotation_x = Eigen::AngleAxisf(angle_x_rad, Vector3f::UnitX());
+    Matrix3f rotation_x;
+    rotation_x = AngleAxisf(angle_x_rad, Vector3f::UnitX());
 
-    Eigen::Matrix3f rotation_y;
-    rotation_y = Eigen::AngleAxisf(angle_y_rad, Vector3f::UnitY());
+    Matrix3f rotation_y;
+    rotation_y = AngleAxisf(angle_y_rad, Vector3f::UnitY());
 
-    Eigen::Matrix3f rotation_z;
-    rotation_z = Eigen::AngleAxisf(angle_z_rad, Vector3f::UnitZ());
+    Matrix3f rotation_z;
+    rotation_z = AngleAxisf(angle_z_rad, Vector3f::UnitZ());
 
     // Combined rotation matrix
-    Eigen::Matrix3f rotation = rotation_z * rotation_y * rotation_x;
+    Matrix3f rotation = rotation_z * rotation_y * rotation_x;
 
     // Generate random translation
     Vector3f translation(trans_dist(rng), trans_dist(rng), trans_dist(rng));

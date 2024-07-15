@@ -86,7 +86,7 @@ void Evaluator::_NaiveRMSE(
         const auto &sp = source_p[i];
         const auto &tp = target_p[i];
 
-        auto pt_trans = (transformation * Eigen::Vector4f(sp(0), sp(1), sp(2), 1.0)).block<3, 1>(0, 0);
+        auto pt_trans = (transformation * Vector4f(sp(0), sp(1), sp(2), 1.0)).block<3, 1>(0, 0);
         err += (pt_trans - tp).squaredNorm();
     }
     rmse_naive_metric.push_back(std::sqrt(err / (double)source_p.size()));
@@ -114,7 +114,7 @@ void Evaluator::_PointToPointComputeRMSE(
 
         if (m.idx != -1)
         {
-            auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
+            auto pt_trans = (transformation * Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
             err += (pt_trans - target_p[m.idx]).squaredNorm();
         }
         else
@@ -148,7 +148,7 @@ void Evaluator::_PointToPlaneComputeRMSE(
         const auto &pt = source_p[i];
         if (m.idx != -1)
         {
-            Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
+            Vector3f pt_trans = (transformation * Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
             r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
             err += r * r;
         }
