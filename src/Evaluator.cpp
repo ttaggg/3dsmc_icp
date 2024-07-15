@@ -8,6 +8,8 @@
 #include "Search.h"           // for Match
 #include "Utils.h"            // for formatString
 
+namespace fs = std::filesystem;
+
 Evaluator::Evaluator(const ICPConfiguration &config)
 {
     evaluateRMSENaive = config.evaluateRMSENaive;
@@ -167,47 +169,40 @@ void Evaluator::_PointToPlaneComputeRMSE(
     rmseNearestPlaneMetric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
 }
 
-void Evaluator::write(std::string outputDir,
-                      std::string experimentName,
-                      std::string meshName)
+void Evaluator::write(fs::path outputDir)
 {
-    // Here we write csvs for each method used into the output_dir
+    // Here we write csvs for each method used into the outputDir.
 
     if (evaluateRMSENaive)
     {
-        std::string metricPath = formatString({outputDir, "/",
-                                               experimentName, "_", meshName, "_rmse_naive_metric.txt"});
+        std::string metricPath = outputDir / fs::path{"rmse_naive_metric.txt"};
         _write_metric(rmseNaiveMetric, metricPath);
     }
 
     if (evaluateRMSENearest)
     {
-        std::string metricPath = formatString({outputDir, "/",
-                                               experimentName, "_", meshName, "_rmse_nn_metric.txt"});
+        std::string metricPath = outputDir / fs::path{"rmse_nn_metric.txt"};
         _write_metric(rmseNearestMetric, metricPath);
     }
 
     if (evaluateRMSENearestPlane)
     {
-        std::string metricPath = formatString({outputDir, "/",
-                                               experimentName, "_", meshName, "_rmse_nn_plane_metric.txt"});
+        std::string metricPath = outputDir / fs::path{"rmse_nn_plane_metric.txt"};
         _write_metric(rmseNearestPlaneMetric, metricPath);
     }
 
     if (evaluateTransforms)
     {
-        std::string metricPathR = formatString({outputDir, "/",
-                                                experimentName, "_", meshName, "_eval_r.txt"});
+        std::string metricPathR = outputDir / fs::path{"eval_r.txt"};
         _write_metric(rotationMetric, metricPathR);
-        std::string metricPathT = formatString({outputDir, "/",
-                                                experimentName, "_", meshName, "_eval_t.txt"});
+
+        std::string metricPathT = outputDir / fs::path{"eval_t.txt"};
         _write_metric(translationMetric, metricPathT);
     }
 
     if (evaluateTime)
     {
-        std::string metricPath = formatString({outputDir, "/",
-                                               experimentName, "_", meshName, "_time_metric.txt"});
+        std::string metricPath = outputDir / fs::path{"time_metric.txt"};
         _write_metric(timeMetric, metricPath);
     }
 }

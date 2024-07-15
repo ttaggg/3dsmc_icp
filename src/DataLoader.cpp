@@ -4,6 +4,8 @@
 #include "SimpleMesh.h" // for SimpleMesh
 #include "Utils.h"      // for formatString
 
+namespace fs = std::filesystem;
+
 size_t DataLoader::size()
 {
     return meshPaths.size();
@@ -71,8 +73,8 @@ bool PartialMeshDataLoader::createMeshes(size_t index,
         return false;
     }
 
-    std::string sourceMeshPath = formatString({meshPaths[index], "/1.off"});
-    std::string targetMeshPath = formatString({meshPaths[index], "/2.off"});
+    std::string sourceMeshPath = fs::path{meshPaths[index]} / fs::path{"1.off"};
+    std::string targetMeshPath = fs::path{meshPaths[index]} / fs::path{"2.off"};
 
     std::cout << sourceMeshPath << std::endl;
     std::cout << targetMeshPath << std::endl;

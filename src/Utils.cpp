@@ -16,20 +16,11 @@
 #include <Open3D/Open3D.h>
 #endif
 
+namespace fs = std::filesystem;
+
 bool containsSubstring(const std::string &str, const std::string &substring)
 {
     return str.find(substring) != std::string::npos;
-}
-
-std::string formatString(std::initializer_list<std::string> elements)
-// formatString without installing fmt or C++20
-{
-    std::ostringstream oss;
-    for (auto &el : elements)
-    {
-        oss << el;
-    }
-    return oss.str();
 }
 
 #define OPEN3D_ENABLED
@@ -149,46 +140,5 @@ std::unique_ptr<DataLoader> createDataloader(const std::string &directoryPath)
     else
     {
         return std::make_unique<MeshDataLoader>();
-    }
-}
-
-bool _directoryExists(const std::string &path)
-{
-    struct stat info;
-
-    if (stat(path.c_str(), &info) != 0)
-    {
-        return false;
-    }
-    else if (info.st_mode & S_IFDIR)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool _createDirectory(const std::string &path)
-{
-#if defined(_WIN32)
-    int ret = _mkdir(path.c_str());
-#else
-    mode_t mode = 0755; // Default mode
-    int ret = mkdir(path.c_str(), mode);
-#endif
-    return (ret == 0);
-}
-
-bool ensureDirectoryExists(const std::string &path)
-{
-    if (_directoryExists(path))
-    {
-        return true;
-    }
-    else
-    {
-        return _createDirectory(path);
     }
 }

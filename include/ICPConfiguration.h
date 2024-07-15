@@ -44,7 +44,7 @@ public:
     bool evaluateTime = false;
     // Experiment
     std::string experimentName = "default";
-    std::string outputDir = ".";
+    std::string dataDir = ".";
 
     void loadFromYaml(const std::string &filename);
     void show();

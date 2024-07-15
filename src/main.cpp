@@ -13,17 +13,19 @@
 #include "Utils.h"			  // for createOptimizer
 #include "VirtualSensor.h"	  // for VirtualSensor
 
+namespace fs = std::filesystem;
+
 #define OPEN3D_ENABLED
 #define MESH_ENABLED
 
-int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
+int runShapeICP(const ICPConfiguration &config)
 {
 	// Reproducibility
 	std::mt19937 rng(42);
 
 	// Load the path to meshes.
-	auto dataloader = createDataloader(directoryPath);
-	dataloader->loadMeshPaths(directoryPath);
+	auto dataloader = createDataloader(config.dataDir);
+	dataloader->loadMeshPaths(config.dataDir);
 
 	ICPOptimizer *optimizer = createOptimizer(config);
 
@@ -38,27 +40,33 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 		optimizer->setEvaluator(&evaluator);
 	}
 
-	Matrix4f gtTransform;		// True value of the transformation.
-	SimpleMesh sourceMesh;		// Loaded mesh.
-	SimpleMesh targetMesh;		// Mesh transformed by a random transformation.
-	Matrix4f estimatedPose;		// Estimated transformation;
-	std::string filenameOutput; // Where to write output.
+	Matrix4f gtTransform;	// True value of the transformation.
+	SimpleMesh sourceMesh;	// Loaded mesh.
+	SimpleMesh targetMesh;	// Mesh transformed by a random transformation.
+	Matrix4f estimatedPose; // Estimated transformation;
+
+	fs::path outputDir;
+	fs::path filenameOutput; // Where to write output.
 
 	for (size_t i = 0; i < dataloader->size(); ++i)
 	{
+		// Prepare data
 		gtTransform = getRandomTransformation(rng, 45, 0.5);
 		dataloader->createMeshes(i, sourceMesh, targetMesh, gtTransform);
 
-		filenameOutput = formatString({"./", dataloader->getName(i), "_joined.off"});
+		// Prepare where to write all metrics and meshes.
+		outputDir = "." / fs::path{config.experimentName} / fs::path{dataloader->getName(i)};
+		fs::create_directories(outputDir);
+		filenameOutput = outputDir / fs::path{"mesh_joined.off"};
+
+		// Estimate pose.
 		estimatedPose = alignShapes(sourceMesh,
 									targetMesh,
 									gtTransform,
 									optimizer,
 									filenameOutput);
-
-		evaluator.write(config.outputDir,
-						config.experimentName,
-						dataloader->getName(i));
+		// Write down metrics.
+		evaluator.write(outputDir);
 		evaluator.reset();
 
 #ifdef OPEN3D_ENABLED
@@ -172,10 +180,6 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	// TODO(oleg): directory should be in argv.
-	const std::string directoryPath = std::string("../Data/greyc_partial/"); // Two partially complete meshes.
-	// const std::string directoryPath = std::string("../Data/greyc_debug/"); // Two complete meshes.
-
 	// Load config from file.
 	ICPConfiguration config;
 	config.loadFromYaml(argv[1]);
@@ -184,7 +188,7 @@ int main(int argc, char *argv[])
 	int result = 0;
 	if (config.runShapeICP)
 	{
-		result = runShapeICP(config, directoryPath);
+		result = runShapeICP(config);
 	}
 	else if (config.runSequenceICP)
 	{

@@ -119,9 +119,9 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     {
         experimentName = config["experimentName"].as<std::string>();
     }
-    if (config["outputDir"])
+    if (config["dataDir"])
     {
-        outputDir = config["outputDir"].as<std::string>();
+        dataDir = config["dataDir"].as<std::string>();
     }
 }
 
@@ -193,12 +193,17 @@ void ICPConfiguration::show()
     std::cout << "====== Other settings ======" << std::endl;
     std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
     std::cout << "nbOfIterations: " << nbOfIterations << std::endl;
+
+    std::cout << "======== Evaluation ========" << std::endl;
+
+    std::cout << "Experiment name: " << experimentName << std::endl;
     std::cout << "Visualization: " << visualize << std::endl;
     std::cout << "Evaluate RMSE naive: " << evaluateRMSENaive << std::endl;
     std::cout << "Evaluate RMSE NN: " << evaluateRMSENearest << std::endl;
     std::cout << "Evaluate RMSE Plane: " << evaluateRMSENearestPlane << std::endl;
     std::cout << "Evaluate transforms: " << evaluateTransforms << std::endl;
     std::cout << "Evaluate time: " << evaluateTime << std::endl;
+    std::cout << "Data directory: " << dataDir << std::endl;
 
     std::cout << "============================" << std::endl;
 

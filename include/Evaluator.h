@@ -1,8 +1,11 @@
 #pragma once
 
-#include <string>  // for string
-#include <vector>  // for vector
-#include "Eigen.h" // for Matrix4f
+#include <filesystem> // for fs
+#include <string>     // for string
+#include <vector>     // for vector
+#include "Eigen.h"    // for Matrix4f
+
+namespace fs = std::filesystem;
 
 class ICPConfiguration;
 class Match;
@@ -28,9 +31,7 @@ public:
     bool evaluateTime;
 
     void reset();
-    void write(std::string outputDir,
-               std::string experimentName,
-               std::string meshName);
+    void write(fs::path outputDir);
 
     void addMetrics(double elapsedSecs,
                     const PointCloud &source,
