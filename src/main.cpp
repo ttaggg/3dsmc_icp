@@ -1,7 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <Open3D/Open3D.h>
-
 #include "Eigen.h"
 #include "VirtualSensor.h"
 #include "SimpleMesh.h"
@@ -11,6 +9,12 @@
 #include "DataLoader.h"
 #include "Utils.h"
 #include "Evaluator.h"
+
+#define MESH_ENABLED 1
+#define OPEN3D_ENABLED 1
+#ifndef OPEN3D_ENABLED 1
+#include <Open3D/Open3D.h>
+#endif
 
 int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 {
@@ -40,16 +44,29 @@ int runShapeICP(const ICPConfiguration &config, const std::string directoryPath)
 		gt_trans = getRandomTransformation(rng, 45, 0.5);
 		dataloader->createMeshes(i, sourceMesh, targetMesh, gt_trans);
 
+		std::vector<std::vector<double>> metric;
 		filenameOutput = formatString({"./", dataloader->getName(i), "_joined.off"});
 		estimatedPose = alignShapes(sourceMesh,
 									targetMesh,
 									optimizer,
-									filenameOutput);
+									filenameOutput,
+									metric);
 
+		// Save error metric
+		std::ofstream file;
+		file.open("./metric.txt");
+		for (int i = 0; i < metric.size(); i++)
+		{
+			file << i + 1 << "," << metric[i][0] << "," << metric[i][1] << "," << metric[i][2] << std::endl;
+		}
+		file.close();
+
+#ifndef OPEN3D_ENABLED 1
 		if (config.visualize)
 		{
 			visualize(filenameOutput);
 		}
+#endif
 	}
 
 	delete optimizer;
@@ -90,6 +107,8 @@ int runSequenceICP(const ICPConfiguration &config)
 	Matrix4f currentCameraToWorld = Matrix4f::Identity();
 	estimatedPoses.push_back(currentCameraToWorld.inverse());
 
+	std::vector<std::vector<double>> avg_metric;
+
 	int i = 0;
 	const int iMax = 50;
 	while (sensor.processNextFrame() && i <= iMax)
@@ -107,7 +126,7 @@ int runSequenceICP(const ICPConfiguration &config)
 						  sensor.getDepthImageHeight(),
 						  sensor.getColorRGBX(),
 						  8};
-		optimizer->estimatePose(source, target, currentCameraToWorld);
+		optimizer->estimatePose(source, target, currentCameraToWorld, avg_metric);
 
 		// Invert the transformation matrix to get the current camera pose.
 		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
@@ -115,6 +134,7 @@ int runSequenceICP(const ICPConfiguration &config)
 				  << currentCameraPose << std::endl;
 		estimatedPoses.push_back(currentCameraPose);
 
+#ifndef MESH_ENABLED 1
 		if (i % 3 == 0)
 		{
 			// We write out the mesh to file for debugging.
@@ -131,9 +151,18 @@ int runSequenceICP(const ICPConfiguration &config)
 				return -1;
 			}
 		}
+#endif
 
 		i++;
 	}
+
+	std::ofstream file;
+	file.open("./metric_room.txt");
+	for (int k = 0; k < avg_metric.size(); k++)
+	{
+		file << k + 1 << "," << avg_metric[k][0] / i << "," << avg_metric[k][1] / i << "," << avg_metric[k][2] / i << std::endl;
+	}
+	file.close();
 
 	delete optimizer;
 

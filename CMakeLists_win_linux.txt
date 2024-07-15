@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 
-project(exercise_5)
+project(3dsmc_icp)
 
 # Options
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Libs CACHE PATH "Path to lib folder")
@@ -10,6 +10,10 @@ set(Eigen3_DIR ${LIBRARY_DIR}/Eigen/share/eigen3/cmake CACHE PATH "Path to insta
 set(glog_DIR ${LIBRARY_DIR}/glog-lib/lib/cmake/glog CACHE PATH "Path to installed glog")
 set(Ceres_DIR ${LIBRARY_DIR}/Ceres/CMake CACHE PATH "Path to installed Ceres")
 set(Flann_INCLUDE_DIR ${LIBRARY_DIR}/Flann-1.8.4/ CACHE PATH "Path to Flann source folder")
+
+set(YAML_CPP_DIR ${LIBRARY_DIR}/yaml-cpp/)
+include_directories(${YAML_CPP_DIR}/include/)
+link_directories(${YAML_CPP_DIR}/lib/)
 
 # Use pre-compiled libraries on Windows
 if(WIN32)
@@ -24,13 +28,16 @@ endif(WIN32)
 
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++17")
 
-set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
-find_package(Open3D REQUIRED)
+#set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
+#find_package(Open3D REQUIRED)
 find_package(Ceres REQUIRED)
 find_package(glog REQUIRED)
 get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
 get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
+
+
 
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 
@@ -64,13 +71,14 @@ set(SOURCE_FILES
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen  Open3D::Open3D)
-target_include_directories(3dsmc_icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR})
+target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen yaml-cpp)
+#target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen  Open3D::Open3D)
+target_include_directories(3dsmc_icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${YAML_CPP_DIR})
 
 # On Windows copy dll to executable folder
 if(WIN32)
     # Visual Studio properties
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT exercise_5)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT 3dsmc_icp)
     set_property(TARGET 3dsmc_icp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/)
 
     # On Windows copy dll to executable folder

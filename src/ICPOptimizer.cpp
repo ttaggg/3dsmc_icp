@@ -116,19 +116,90 @@ void ICPOptimizer::pruneCorrespondences(const std::vector<Vector3f> &sourceNorma
     }
 }
 
+double ICPOptimizer::PointToPointComputeRMSE(
+    const PointCloud &source,
+    const PointCloud &target,
+    const std::vector<Match> &match,
+    const Eigen::Matrix4f &transformation)
+{
+
+    const auto source_p = source.getPoints();
+    const auto target_p = target.getPoints();
+
+    if (match.empty())
+        return 0.0;
+
+    double err = 0.0;
+    int unmatched = 0;
+    for (int i = 0; i < match.size(); i++)
+    {
+        const auto &m = match[i];
+        const auto &pt = source_p[i];
+
+        if (m.idx != -1)
+        {
+            auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
+            err += (pt_trans - target_p[m.idx]).norm();
+        }
+        else
+        {
+            unmatched++;
+        }
+        i++;
+    }
+
+    return std::sqrt(err / (double)(match.size() - unmatched));
+}
+
+double ICPOptimizer::PointToPlaneComputeRMSE(
+    const PointCloud &source,
+    const PointCloud &target,
+    const std::vector<Match> &match,
+    const Eigen::Matrix4f &transformation)
+{
+    const auto source_p = source.getPoints();
+    const auto target_p = target.getPoints();
+    const auto target_n = target.getNormals();
+
+    if (match.empty())
+        return 0.0;
+
+    double err = 0.0, r;
+    int i = 0;
+    int unmatched = 0;
+    for (int i = 0; i < match.size(); i++)
+    {
+        const auto &m = match[i];
+        const auto &pt = source_p[i];
+        if (m.idx != -1)
+        {
+            Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
+            r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
+            err += r * r;
+        }
+        else
+        {
+            unmatched++;
+        }
+        i++;
+    }
+    return std::sqrt(err / (double)(match.size() - unmatched));
+}
+
 /**
  * ICP optimizer - using Ceres for optimization.
  */
 
 CeresICPOptimizer::CeresICPOptimizer() {}
 
-void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
+void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
+    std::vector<std::vector<double>> tmp;
 
     // We optimize on the transformation in SE3 notation: 3 parameters for the axis-angle vector of the rotation (its length presents
     // the rotation angle) and 3 parameters for the translation vector.
@@ -186,6 +257,31 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         poseIncrement.setZero();
 
         std::cout << "Optimization iteration done." << std::endl;
+
+        // Calculate Error metric
+        std::vector<double> _metric;
+        _metric.push_back(elapsedSecs);
+        _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
+        _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
+        tmp.push_back(_metric);
+
+        std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
+        std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
+    }
+
+    if (metric.size() != 0)
+    {
+        std::cout << "y" << std::endl;
+        for (int k = 0; k < metric.size(); k++)
+        {
+            metric[k][0] += tmp[k][0];
+            metric[k][1] += tmp[k][1];
+            metric[k][2] += tmp[k][2];
+        }
+    }
+    else
+    {
+        metric = tmp;
     }
 
     // Store result
@@ -268,13 +364,14 @@ void CeresICPOptimizer::
 
 LinearICPOptimizer::LinearICPOptimizer() {}
 
-void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose)
+void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
 
     // The initial estimate can be given as an argument.
     Matrix4f estimatedPose = initialPose;
+    std::vector<std::vector<double>> tmp;
 
     for (int i = 0; i < m_nIterations; ++i)
     {
@@ -330,6 +427,31 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         }
 
         std::cout << "Optimization iteration done." << std::endl;
+
+        // Calculate Error metric
+        std::vector<double> _metric;
+        _metric.push_back(elapsedSecs);
+        _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
+        _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
+        tmp.push_back(_metric);
+
+        std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
+        std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
+    }
+
+    if (metric.size() != 0)
+    {
+        std::cout << "y" << std::endl;
+        for (int k = 0; k < metric.size(); k++)
+        {
+            metric[k][0] += tmp[k][0];
+            metric[k][1] += tmp[k][1];
+            metric[k][2] += tmp[k][2];
+        }
+    }
+    else
+    {
+        metric = tmp;
     }
 
     // Store result
