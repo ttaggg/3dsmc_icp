@@ -55,7 +55,7 @@ int runShapeICP(const ICPConfiguration &config)
 		dataloader->createMeshes(i, sourceMesh, targetMesh, gtTransform);
 
 		// Prepare where to write all metrics and meshes.
-		outputDir = "." / fs::path{config.experimentName} / fs::path{dataloader->getName(i)};
+		outputDir = "../results" / fs::path{config.experimentName} / fs::path{dataloader->getName(i)};
 		fs::create_directories(outputDir);
 		filenameOutput = outputDir / fs::path{"mesh_joined.off"};
 
@@ -119,7 +119,7 @@ int runSequenceICP(const ICPConfiguration &config)
 		optimizer->setEvaluator(&evaluator);
 	}
 
-	fs::path outputDir = "." / fs::path{config.experimentName};
+	fs::path outputDir = "../results " / fs::path{config.experimentName};
 	fs::create_directories(outputDir);
 
 	// We store the estimated camera poses.
