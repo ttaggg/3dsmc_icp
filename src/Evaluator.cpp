@@ -24,12 +24,14 @@ void Evaluator::reset()
     rmseNaiveMetric.clear();
     rmseNearestMetric.clear();
     rmseNearestPlaneMetric.clear();
-    timeMetric.clear();
+    timeMatchMetric.clear();
+    timeOptiMetric.clear();
     rotationMetric.clear();
     translationMetric.clear();
 }
 
-void Evaluator::addMetrics(double elapsedSecs,
+void Evaluator::addMetrics(double elapsedSecsMatch,
+                           double elapsedSecsOpti,
                            const PointCloud &source,
                            const PointCloud &target,
                            std::vector<Match> &matches,
@@ -54,7 +56,10 @@ void Evaluator::addMetrics(double elapsedSecs,
     if (evaluateTransforms)
         _evalTransforms(estimatedPose, groundPose);
     if (evaluateTime)
-        timeMetric.push_back(elapsedSecs);
+    {
+        timeMatchMetric.push_back(elapsedSecsMatch);
+        timeOptiMetric.push_back(elapsedSecsOpti);
+    }
 }
 
 void Evaluator::_evalTransforms(Matrix4f &transform, Matrix4f &groundTruth)
@@ -203,8 +208,10 @@ void Evaluator::write(fs::path outputDir)
 
     if (evaluateTime)
     {
-        std::string metricPath = outputDir / fs::path{"time_metric.txt"};
-        _write_metric(timeMetric, metricPath);
+        std::string metricMatchPath = outputDir / fs::path{"time_match_metric.txt"};
+        _write_metric(timeMatchMetric, metricMatchPath);
+        std::string metricOptiPath = outputDir / fs::path{"time_opti_metric.txt"};
+        _write_metric(timeOptiMetric, metricOptiPath);
     }
 }
 

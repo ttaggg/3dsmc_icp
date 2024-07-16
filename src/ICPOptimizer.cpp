@@ -151,7 +151,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
     for (int i = 0; i < m_nIterations; ++i)
     {
         // Compute the matches.
-        clock_t begin = clock();
+        clock_t beginMatch = clock();
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
 
@@ -160,9 +160,9 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
                                                               &transformedNormals);
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
-        clock_t end = clock();
-        double elapsedSecs = double(end - begin) / CLOCKS_PER_SEC;
-        std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
+        clock_t endMatch = clock();
+        double elapsedSecsMatch = double(endMatch - beginMatch) / CLOCKS_PER_SEC;
+        std::cout << "Completed in " << elapsedSecsMatch << " seconds." << std::endl;
 
         // Prepare point-to-point and point-to-plane constraints.
         ceres::Problem problem;
@@ -178,11 +178,14 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         ceres::Solver::Options options;
         configureSolver(options);
 
+        clock_t beginOpti = clock();
         // Run the solver (for one iteration).
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
         std::cout << summary.BriefReport() << std::endl;
         // std::cout << summary.FullReport() << std::endl;
+        clock_t endOpti = clock();
+        double elapsedSecsOpti = double(endOpti - beginOpti) / CLOCKS_PER_SEC;
 
         // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
         Matrix4f matrix;
@@ -202,7 +205,8 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         // Calculate Error metric
         if (m_evaluate)
         {
-            evaluator->addMetrics(elapsedSecs,
+            evaluator->addMetrics(elapsedSecsMatch,
+                                  elapsedSecsOpti,
                                   source,
                                   target,
                                   matches,
@@ -304,7 +308,7 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
     {
         // Compute the matches.
         std::cout << "Matching points ..." << std::endl;
-        clock_t begin = clock();
+        clock_t beginMatch = clock();
 
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
         auto transformedNormals = transformNormals(source.getNormals(), estimatedPose);
@@ -314,9 +318,9 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
                                                               &transformedNormals);
         pruneCorrespondences(transformedNormals, target.getNormals(), matches);
 
-        clock_t end = clock();
-        double elapsedSecs = double(end - begin) / CLOCKS_PER_SEC;
-        std::cout << "Completed in " << elapsedSecs << " seconds." << std::endl;
+        clock_t endMatch = clock();
+        double elapsedSecsMatch = double(endMatch - beginMatch) / CLOCKS_PER_SEC;
+        std::cout << "Completed in " << elapsedSecsMatch << " seconds." << std::endl;
 
         std::vector<Vector3f> sourcePoints;
         std::vector<Vector3f> targetPoints;
@@ -337,7 +341,7 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
                 targetNormals.push_back(target.getNormals()[match.idx]);
             }
         }
-
+        clock_t beginOpti = clock();
         // Estimate the new pose
         if (m_bUsePointToPointConstraints)
         {
@@ -356,18 +360,22 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
             std::cout << "Flags for all methods are set to false." << std::endl;
             exit(1);
         }
+        clock_t endOpti = clock();
+        double elapsedSecsOpti = double(endOpti - beginOpti) / CLOCKS_PER_SEC;
 
         std::cout << "Optimization iteration done." << std::endl;
 
         // Calculate Error metric
         if (m_evaluate)
         {
-            evaluator->addMetrics(elapsedSecs,
-                                  source,
-                                  target,
-                                  matches,
-                                  estimatedPose,
-                                  groundPose);
+            evaluator->addMetrics(
+                elapsedSecsMatch,
+                elapsedSecsOpti,
+                source,
+                target,
+                matches,
+                estimatedPose,
+                groundPose);
         }
     }
 

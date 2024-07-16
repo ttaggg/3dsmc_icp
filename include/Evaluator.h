@@ -20,7 +20,8 @@ public:
     std::vector<double> rmseNaiveMetric;
     std::vector<double> rmseNearestMetric;
     std::vector<double> rmseNearestPlaneMetric;
-    std::vector<double> timeMetric;
+    std::vector<double> timeMatchMetric;
+    std::vector<double> timeOptiMetric;
     std::vector<double> rotationMetric;
     std::vector<double> translationMetric;
 
@@ -33,7 +34,8 @@ public:
     void reset();
     void write(fs::path outputDir);
 
-    void addMetrics(double elapsedSecs,
+    void addMetrics(double elapsedSecsMatch,
+                    double elapsedSecsOpti,
                     const PointCloud &source,
                     const PointCloud &target,
                     std::vector<Match> &matches,

@@ -49,7 +49,8 @@ _MAP_NAMES = {
     "rmse_nn_plane_metric": "RMSE Pointclouds (nearest, point to plane)",
     "eval_r": "Frobenius Norm For Rotation",
     "eval_t": "RMSE Translation",
-    "time_metric": "Time",
+    "time_match_metric": "Match Time",
+    "time_opti_metric": "Opti Time",
 }
 
 # Initialize a dictionary to store data
