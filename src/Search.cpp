@@ -70,7 +70,7 @@ std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3
 {
     if (!m_index)
     {
-        std::cout << "FLANN index needs to be build before querying any matches." << std::endl;
+        std::cout << "FLANN index needs to be built before querying any matches." << std::endl;
         return {};
     }
 
@@ -107,7 +107,7 @@ std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3
     }
 
     // Release the memory.
-    delete[] query.ptr();
+    delete[] queryPoints;
     delete[] indices.ptr();
     delete[] distances.ptr();
 
@@ -173,7 +173,7 @@ std::vector<Match> NearestNeighborSearchWithColors::queryMatches(const std::vect
             matches.push_back(Match{-1, 0.f});
     }
 
-    delete[] query.ptr();
+    delete[] queryPoints;
     delete[] indices.ptr();
     delete[] distances.ptr();
 
@@ -243,62 +243,72 @@ std::vector<Match> NormalShootCorrespondence::_queryMatches(const std::vector<Ve
                                                             const std::vector<Vector3f> &transformedColors,
                                                             const std::vector<Vector3f> &transformedNormals)
 {
+    /*
+    Idea:
+        1. Find closest target point to a given source point just like NN correspondence.
+        2. Find the projection of this target point on a ray made with source normal.
+        3. Find the new match as a closest point to this project point.
+    */
     if (!m_index)
     {
         std::cout << "FLANN index needs to be built before querying any matches." << std::endl;
         return {};
     }
 
-    std::vector<Match> matches;
-    for (int idx = 0; idx < transformedPoints.size(); ++idx)
+    // FLANN requires that all the points be flat. Therefore we copy the points to a separate flat array.
+    float *queryPoints = new float[transformedPoints.size() * 3];
+    for (size_t pointIndex = 0; pointIndex < transformedPoints.size(); pointIndex++)
     {
-        auto point = transformedPoints.at(idx);
-        auto normal = transformedNormals.at(idx);
-        Vector3f intersection;
-        if (findRayIntersection(point, normal, intersection))
+        for (size_t dim = 0; dim < 3; dim++)
         {
-            int matched_index = findNearestNeighbor(intersection);
-            matches.push_back(Match{matched_index, 1.});
-        }
-        else
-        {
-            matches.push_back(Match{-1, 0.});
+            queryPoints[pointIndex * 3 + dim] = transformedPoints[pointIndex][dim];
         }
     }
 
-    return matches;
-}
+    flann::Matrix<float> query(queryPoints, transformedPoints.size(), 3);
+    flann::Matrix<int> indices(new int[query.rows * 1], query.rows, 1);
+    flann::Matrix<float> distances(new float[query.rows * 1], query.rows, 1);
 
-bool NormalShootCorrespondence::findRayIntersection(const Vector3f &origin, const Vector3f &direction, Vector3f &intersection)
-{
-    float queryPoint[3] = {origin.x(), origin.y(), origin.z()};
-    flann::Matrix<float> query(queryPoint, 1, 3);
-    flann::Matrix<int> indices(new int[1], 1, 1);
-    flann::Matrix<float> distances(new float[1], 1, 1);
-
+    // Do a knn search, searching for 1 nearest point and using 16 checks.
     flann::SearchParams searchParams{16};
     searchParams.cores = 0;
     m_index->knnSearch(query, indices, distances, 1, searchParams);
 
-    if (distances[0][0] <= m_maxDistance)
+    // Filter the matches.
+    const unsigned nMatches = transformedPoints.size();
+    std::vector<Match> matches;
+    matches.reserve(nMatches);
+
+    for (int i = 0; i < nMatches; ++i)
     {
         Vector3f nearestPoint(
-            m_flatPoints[indices[0][0] * 3],
-            m_flatPoints[indices[0][0] * 3 + 1],
-            m_flatPoints[indices[0][0] * 3 + 2]);
+            m_flatPoints[*indices[i] * 3],
+            m_flatPoints[*indices[i] * 3 + 1],
+            m_flatPoints[*indices[i] * 3 + 2]);
+
+        auto origin = transformedPoints.at(i);
+        auto normal = transformedNormals.at(i);
 
         Vector3f vec = nearestPoint - origin;
-        float t = vec.dot(direction) / direction.dot(direction);
-        intersection = origin + t * direction;
+        float t = vec.dot(normal) / normal.dot(normal);
+        Vector3f intersection = origin + t * normal;
 
-        delete[] indices.ptr();
-        delete[] distances.ptr();
-        return true;
+        int nearestIndex = findNearestNeighbor(intersection);
+
+        if (*distances[nearestIndex] <= m_maxDistance)
+        {
+            matches.push_back(Match{nearestIndex, 1.f});
+        }
+        else
+            matches.push_back(Match{-1, 0.f});
     }
 
+    // Release the memory.
+    delete[] queryPoints;
     delete[] indices.ptr();
     delete[] distances.ptr();
-    return false;
+
+    return matches;
 }
 
 int NormalShootCorrespondence::findNearestNeighbor(const Vector3f &point)

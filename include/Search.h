@@ -101,8 +101,5 @@ private:
 									 const std::vector<Vector3f> &transformedColors,
 									 const std::vector<Vector3f> &transformedNormals);
 
-	bool findRayIntersection(const Vector3f &origin,
-							 const Vector3f &direction,
-							 Vector3f &intersection);
 	int findNearestNeighbor(const Vector3f &point);
 };
