@@ -320,6 +320,8 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
 
         std::vector<Vector3f> sourcePoints;
         std::vector<Vector3f> targetPoints;
+        std::vector<Vector3f> targetNormals;
+        std::vector<Vector3f> sourceNormals;
 
         // Add all matches to the sourcePoints and targetPoints vector,
         // so that the sourcePoints[i] matches targetPoints[i]. For every source point,
@@ -330,7 +332,9 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
             if (match.idx >= 0)
             {
                 sourcePoints.push_back(transformedPoints[j]);
+                sourceNormals.push_back(transformedNormals[j]);
                 targetPoints.push_back(target.getPoints()[match.idx]);
+                targetNormals.push_back(target.getNormals()[match.idx]);
             }
         }
 
@@ -341,11 +345,11 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         }
         else if (m_bUsePointToPlaneConstraints)
         {
-            estimatedPose = estimatePosePointToPlane(sourcePoints, targetPoints, target.getNormals()) * estimatedPose;
+            estimatedPose = estimatePosePointToPlane(sourcePoints, targetPoints, targetNormals) * estimatedPose;
         }
         else if (m_bUseSymmetricConstraints)
         {
-            estimatedPose = estimatePoseSymmetric(sourcePoints, targetPoints, source.getNormals(), target.getNormals()) * estimatedPose;
+            estimatedPose = estimatePoseSymmetric(sourcePoints, targetPoints, sourceNormals, targetNormals) * estimatedPose;
         }
         else
         {
