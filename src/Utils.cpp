@@ -128,6 +128,7 @@ ICPOptimizer *createOptimizer(const ICPConfiguration &config)
     optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);
     optimizer->useSymmetricConstraints(config.useSymmetric, config.weightSymmetric);
     optimizer->setNbOfIterations(config.nbOfIterations);
+    optimizer->setColorGamma(config.colorGamma);
 
     return optimizer;
 }

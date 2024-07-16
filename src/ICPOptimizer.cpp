@@ -24,6 +24,11 @@ void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
     m_corrAlgo->setMatchingMaxDistance(maxDistance);
 }
 
+void ICPOptimizer::setColorGamma(float colorGamma)
+{
+    m_colorGamma = colorGamma;
+}
+
 void ICPOptimizer::setEvaluator(Evaluator *evaluator_)
 {
     evaluator = evaluator_;
@@ -168,6 +173,8 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         ceres::Problem problem;
         prepareConstraints(transformedPoints,
                            target.getPoints(),
+                           source.getColors(),
+                           target.getColors(),
                            transformedNormals,
                            target.getNormals(),
                            matches,
@@ -227,9 +234,15 @@ void CeresICPOptimizer::configureSolver(ceres::Solver::Options &options)
 }
 
 void CeresICPOptimizer::
-    CeresICPOptimizer::prepareConstraints(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints,
-                                          const std::vector<Vector3f> &sourceNormals, const std::vector<Vector3f> &targetNormals,
-                                          const std::vector<Match> matches, const PoseIncrement<double> &poseIncrement, ceres::Problem &problem) const
+    CeresICPOptimizer::prepareConstraints(const std::vector<Vector3f> &sourcePoints,
+                                          const std::vector<Vector3f> &targetPoints,
+                                          const std::vector<Vector3f> &sourceColors,
+                                          const std::vector<Vector3f> &targetColors,
+                                          const std::vector<Vector3f> &sourceNormals,
+                                          const std::vector<Vector3f> &targetNormals,
+                                          const std::vector<Match> matches,
+                                          const PoseIncrement<double> &poseIncrement,
+                                          ceres::Problem &problem) const
 {
     const unsigned nPoints = sourcePoints.size();
 
@@ -239,7 +252,9 @@ void CeresICPOptimizer::
         if (match.idx >= 0)
         {
             const auto &sourcePoint = sourcePoints[i];
+            const auto &sourceColor = sourceColors[i];
             const auto &targetPoint = targetPoints[match.idx];
+            const auto &targetColor = targetColors[match.idx];
 
             if (m_bUsePointToPointConstraints)
             {
@@ -248,7 +263,10 @@ void CeresICPOptimizer::
 
                 ceres::CostFunction *cost_function = PointToPointConstraint::create(sourcePoint,
                                                                                     targetPoint,
-                                                                                    m_weightPointToPointConstraints);
+                                                                                    sourceColor,
+                                                                                    targetColor,
+                                                                                    m_weightPointToPointConstraints,
+                                                                                    m_colorGamma);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
 
@@ -261,8 +279,11 @@ void CeresICPOptimizer::
 
                 ceres::CostFunction *cost_function = PointToPlaneConstraint::create(sourcePoint,
                                                                                     targetPoint,
+                                                                                    sourceColor,
+                                                                                    targetColor,
                                                                                     targetNormal,
-                                                                                    m_weightPointToPlaneConstraints);
+                                                                                    m_weightPointToPlaneConstraints,
+                                                                                    m_colorGamma);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
 
@@ -276,9 +297,12 @@ void CeresICPOptimizer::
 
                 ceres::CostFunction *cost_function = SymmetricConstraint::create(sourcePoint,
                                                                                  targetPoint,
+                                                                                 sourceColor,
+                                                                                 targetColor,
                                                                                  sourceNormal,
                                                                                  targetNormal,
-                                                                                 m_weightSymmetricConstraints);
+                                                                                 m_weightSymmetricConstraints,
+                                                                                 m_colorGamma);
                 problem.AddResidualBlock(cost_function, nullptr, poseIncrement.getData());
             }
         }

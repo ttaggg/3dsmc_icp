@@ -51,7 +51,10 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     {
         weightSymmetric = config["weightSymmetric"].as<double>();
     }
-
+    if (config["colorGamma"])
+    {
+        colorGamma = config["colorGamma"].as<double>();
+    }
     // Whether to use color information.
     if (config["useColors"])
     {
@@ -178,6 +181,7 @@ void ICPConfiguration::show()
     {
         std::cout << "useSymmetric with weight: " << weightSymmetric << std::endl;
     }
+    std::cout << "colorGamma: " << colorGamma << std::endl;
 
     std::cout << "====== Correspondence ======" << std::endl;
     if (correspondenceMethod == NN)

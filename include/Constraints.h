@@ -156,12 +156,19 @@ private:
 class PointToPointConstraint
 {
 public:
-    PointToPointConstraint(const Vector3f &sourcePoint, const Vector3f &targetPoint, const float weight) : m_sourcePoint{sourcePoint},
-                                                                                                           m_targetPoint{targetPoint},
-                                                                                                           m_weight{weight}
+    PointToPointConstraint(const Vector3f &sourcePoint,
+                           const Vector3f &targetPoint,
+                           const Vector3f &sourceColor,
+                           const Vector3f &targetColor,
+                           const float weight,
+                           const float colorGamma) : m_sourcePoint{sourcePoint},
+                                                     m_targetPoint{targetPoint},
+                                                     m_sourceColor{sourceColor},
+                                                     m_targetColor{targetColor},
+                                                     m_weight{weight},
+                                                     m_colorGamma{colorGamma}
     {
     }
-
     template <typename T>
     bool operator()(const T *const pose, T *residuals) const
     {
@@ -176,33 +183,61 @@ public:
         T newSourse[3];
         poseIncrement.apply(source, newSourse);
 
-        residuals[0] = T(m_weight) * (newSourse[0] - target[0]);
-        residuals[1] = T(m_weight) * (newSourse[1] - target[1]);
-        residuals[2] = T(m_weight) * (newSourse[2] - target[2]);
+        auto dist = std::sqrt((m_sourceColor[0] - m_targetColor[0]) * (m_sourceColor[0] - m_targetColor[0]) +
+                              (m_sourceColor[1] - m_targetColor[1]) * (m_sourceColor[1] - m_targetColor[1]) +
+                              (m_sourceColor[2] - m_targetColor[2]) * (m_sourceColor[2] - m_targetColor[2]));
+
+        T coeff = T(std::exp(-m_colorGamma * dist));
+
+        residuals[0] = coeff * T(m_weight) * (newSourse[0] - target[0]);
+        residuals[1] = coeff * T(m_weight) * (newSourse[1] - target[1]);
+        residuals[2] = coeff * T(m_weight) * (newSourse[2] - target[2]);
 
         return true;
     }
 
-    static ceres::CostFunction *create(const Vector3f &sourcePoint, const Vector3f &targetPoint, const float weight)
+    static ceres::CostFunction *create(const Vector3f &sourcePoint,
+                                       const Vector3f &targetPoint,
+                                       const Vector3f &sourceColor,
+                                       const Vector3f &targetColor,
+                                       const float weight,
+                                       const float colorGamma)
     {
         return new ceres::AutoDiffCostFunction<PointToPointConstraint, 3, 6>(
-            new PointToPointConstraint(sourcePoint, targetPoint, weight));
+            new PointToPointConstraint(sourcePoint,
+                                       targetPoint,
+                                       sourceColor,
+                                       targetColor,
+                                       weight,
+                                       colorGamma));
     }
 
 protected:
     const Vector3f m_sourcePoint;
     const Vector3f m_targetPoint;
+    const Vector3f m_sourceColor;
+    const Vector3f m_targetColor;
     const float m_weight;
-    const float LAMBDA = 0.1f;
+    const float m_colorGamma;
 };
 
 class PointToPlaneConstraint
 {
 public:
-    PointToPlaneConstraint(const Vector3f &sourcePoint, const Vector3f &targetPoint, const Vector3f &targetNormal, const float weight) : m_sourcePoint{sourcePoint},
-                                                                                                                                         m_targetPoint{targetPoint},
-                                                                                                                                         m_targetNormal{targetNormal},
-                                                                                                                                         m_weight{weight}
+    PointToPlaneConstraint(const Vector3f &sourcePoint,
+                           const Vector3f &targetPoint,
+                           const Vector3f &sourceColor,
+                           const Vector3f &targetColor,
+                           const Vector3f &targetNormal,
+                           const float weight,
+                           const float colorGamma) : m_sourcePoint{sourcePoint},
+                                                     m_targetPoint{targetPoint},
+                                                     m_sourceColor{sourceColor},
+                                                     m_targetColor{targetColor},
+                                                     m_targetNormal{targetNormal},
+                                                     m_weight{weight},
+                                                     m_colorGamma{colorGamma}
+
     {
     }
 
@@ -223,38 +258,64 @@ public:
         T newSourse[3];
         poseIncrement.apply(source, newSourse);
 
-        residuals[0] = T(m_weight) * (normal[0] * (newSourse[0] - target[0]) +
-                                      normal[1] * (newSourse[1] - target[1]) +
-                                      normal[2] * (newSourse[2] - target[2]));
+        auto dist = std::sqrt((m_sourceColor[0] - m_targetColor[0]) * (m_sourceColor[0] - m_targetColor[0]) +
+                              (m_sourceColor[1] - m_targetColor[1]) * (m_sourceColor[1] - m_targetColor[1]) +
+                              (m_sourceColor[2] - m_targetColor[2]) * (m_sourceColor[2] - m_targetColor[2]));
+
+        T coeff = T(std::exp(-m_colorGamma * dist));
+
+        residuals[0] = coeff * T(m_weight) * (normal[0] * (newSourse[0] - target[0]) + normal[1] * (newSourse[1] - target[1]) + normal[2] * (newSourse[2] - target[2]));
 
         return true;
     }
 
-    static ceres::CostFunction *create(const Vector3f &sourcePoint, const Vector3f &targetPoint, const Vector3f &targetNormal, const float weight)
+    static ceres::CostFunction *create(const Vector3f &sourcePoint,
+                                       const Vector3f &targetPoint,
+                                       const Vector3f &sourceColor,
+                                       const Vector3f &targetColor,
+                                       const Vector3f &targetNormal,
+                                       const float weight,
+                                       const float colorGamma)
     {
         return new ceres::AutoDiffCostFunction<PointToPlaneConstraint, 1, 6>(
-            new PointToPlaneConstraint(sourcePoint, targetPoint, targetNormal, weight));
+            new PointToPlaneConstraint(sourcePoint,
+                                       targetPoint,
+                                       sourceColor,
+                                       targetColor,
+                                       targetNormal,
+                                       weight,
+                                       colorGamma));
     }
 
 protected:
     const Vector3f m_sourcePoint;
     const Vector3f m_targetPoint;
+    const Vector3f m_sourceColor;
+    const Vector3f m_targetColor;
     const Vector3f m_targetNormal;
     const float m_weight;
-    const float LAMBDA = 1.0f;
+    const float m_colorGamma;
 };
 
 class SymmetricConstraint
 {
 public:
-    SymmetricConstraint(const Vector3f &sourcePoint, const Vector3f &targetPoint,
-                        const Vector3f &sourceNormal, const Vector3f &targetNormal,
-                        const float weight)
+    SymmetricConstraint(const Vector3f &sourcePoint,
+                        const Vector3f &targetPoint,
+                        const Vector3f &sourceColor,
+                        const Vector3f &targetColor,
+                        const Vector3f &sourceNormal,
+                        const Vector3f &targetNormal,
+                        const float weight,
+                        const float colorGamma)
         : m_sourcePoint{sourcePoint},
           m_targetPoint{targetPoint},
+          m_sourceColor{sourceColor},
+          m_targetColor{targetColor},
           m_sourceNormal{sourceNormal},
           m_targetNormal{targetNormal},
-          m_weight{weight}
+          m_weight{weight},
+          m_colorGamma{colorGamma}
     {
     }
 
@@ -287,25 +348,44 @@ public:
             sourceNormal[1] + targetNormal[1],
             sourceNormal[2] + targetNormal[2]};
 
-        residuals[0] = T(m_weight) * (normalSum[0] * (newSource[0] - newTarget[0]) +
-                                      normalSum[1] * (newSource[1] - newTarget[1]) +
-                                      normalSum[2] * (newSource[2] - newTarget[2]));
+        auto dist = std::sqrt((m_sourceColor[0] - m_targetColor[0]) * (m_sourceColor[0] - m_targetColor[0]) +
+                              (m_sourceColor[1] - m_targetColor[1]) * (m_sourceColor[1] - m_targetColor[1]) +
+                              (m_sourceColor[2] - m_targetColor[2]) * (m_sourceColor[2] - m_targetColor[2]));
+
+        T coeff = T(std::exp(-m_colorGamma * dist));
+
+        residuals[0] = coeff * T(m_weight) * (normalSum[0] * (newSource[0] - newTarget[0]) + normalSum[1] * (newSource[1] - newTarget[1]) + normalSum[2] * (newSource[2] - newTarget[2]));
 
         return true;
     }
 
-    static ceres::CostFunction *create(const Vector3f &sourcePoint, const Vector3f &targetPoint,
-                                       const Vector3f &sourceNormal, const Vector3f &targetNormal,
-                                       const float weight)
+    static ceres::CostFunction *create(const Vector3f &sourcePoint,
+                                       const Vector3f &targetPoint,
+                                       const Vector3f &sourceColor,
+                                       const Vector3f &targetColor,
+                                       const Vector3f &sourceNormal,
+                                       const Vector3f &targetNormal,
+                                       const float weight,
+                                       const float colorGamma)
     {
         return new ceres::AutoDiffCostFunction<SymmetricConstraint, 1, 6>(
-            new SymmetricConstraint(sourcePoint, targetPoint, sourceNormal, targetNormal, weight));
+            new SymmetricConstraint(sourcePoint,
+                                    targetPoint,
+                                    sourceColor,
+                                    targetColor,
+                                    sourceNormal,
+                                    targetNormal,
+                                    weight,
+                                    colorGamma));
     }
 
 protected:
     const Vector3f m_sourcePoint;
     const Vector3f m_targetPoint;
+    const Vector3f m_sourceColor;
+    const Vector3f m_targetColor;
     const Vector3f m_sourceNormal;
     const Vector3f m_targetNormal;
     const float m_weight;
+    const float m_colorGamma;
 };

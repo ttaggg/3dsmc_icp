@@ -23,6 +23,7 @@ class ICPOptimizer
 public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
+    void setColorGamma(float colorGamma);
     void setCorrespondenceMethod(CorrMethod method, bool useColor);
     void usePointToPointConstraints(bool bUsePointToPointConstraints, double weightPointToPointConstraints);
     void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints, double weightPointToPlaneConstraints);
@@ -46,6 +47,7 @@ protected:
     bool m_bUseSymmetricConstraints;
     bool m_weightSymmetricConstraints;
     bool m_evaluate = false;
+    double m_colorGamma = 0;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
@@ -69,6 +71,8 @@ private:
     void configureSolver(ceres::Solver::Options &options);
     void prepareConstraints(const std::vector<Vector3f> &sourcePoints,
                             const std::vector<Vector3f> &targetPoints,
+                            const std::vector<Vector3f> &sourceColors,
+                            const std::vector<Vector3f> &targetColors,
                             const std::vector<Vector3f> &sourceNormals,
                             const std::vector<Vector3f> &targetNormals,
                             const std::vector<Match> matches,

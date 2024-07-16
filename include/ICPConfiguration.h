@@ -29,6 +29,7 @@ public:
     double weightPointToPlane = 1.;
     bool useSymmetric = false;
     double weightSymmetric = 1.;
+    double colorGamma = 0.;
     // Whether to use color information.
     bool useColors = false;
     // Correspondence method (NN / SHOOT)
