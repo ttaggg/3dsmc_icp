@@ -117,10 +117,37 @@ std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3
 /**
  * Nearest neighbor search using FLANN with color information.
  */
-void NearestNeighborSearchWithColors::buildIndex(const std::vector<Vector3f> &targetPoints,
-                                                 const std::vector<Vector3f> &targetColors,
-                                                 const std::vector<Vector3f> &targetNormals)
+
+NearestNeighborSearchWithColors::NearestNeighborSearchWithColors() : Search(),
+                                                                     m_nTrees{1},
+                                                                     m_index{nullptr},
+                                                                     m_flatPoints{nullptr}
 {
+}
+
+NearestNeighborSearchWithColors::~NearestNeighborSearchWithColors()
+{
+    if (m_index)
+    {
+        delete m_flatPoints;
+        delete m_index;
+        m_flatPoints = nullptr;
+        m_index = nullptr;
+    }
+}
+
+void NearestNeighborSearchWithColors::buildIndex(const std::vector<Vector3f> &targetPoints,
+                                                 const std::vector<Vector3f> *targetColors,
+                                                 const std::vector<Vector3f> *targetNormals)
+{
+    return _buildIndex(targetPoints, *targetColors, *targetNormals);
+}
+
+void NearestNeighborSearchWithColors::_buildIndex(const std::vector<Vector3f> &targetPoints,
+                                                  const std::vector<Vector3f> &targetColors,
+                                                  const std::vector<Vector3f> &targetNormals)
+{
+
     // Assuming targetColors.size() == targetPoints.size()
     m_flatPoints = new float[targetPoints.size() * 6];
     for (size_t pointIndex = 0; pointIndex < targetPoints.size(); ++pointIndex)
@@ -139,8 +166,15 @@ void NearestNeighborSearchWithColors::buildIndex(const std::vector<Vector3f> &ta
 }
 
 std::vector<Match> NearestNeighborSearchWithColors::queryMatches(const std::vector<Vector3f> &transformedPoints,
-                                                                 const std::vector<Vector3f> &transformedColors,
-                                                                 const std::vector<Vector3f> &transformedNormals)
+                                                                 const std::vector<Vector3f> *transformedColors,
+                                                                 const std::vector<Vector3f> *transformedNormals)
+{
+    return _queryMatches(transformedPoints, *transformedColors, *transformedNormals);
+}
+
+std::vector<Match> NearestNeighborSearchWithColors::_queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                                  const std::vector<Vector3f> &transformedColors,
+                                                                  const std::vector<Vector3f> &transformedNormals)
 {
     // Assuming transformedColors.size() == transformedPoints.size()
     float *queryPoints = new float[transformedPoints.size() * 6];

@@ -60,15 +60,29 @@ protected:
 	float *m_flatPoints;
 };
 
-class NearestNeighborSearchWithColors : public NearestNeighborSearch
+class NearestNeighborSearchWithColors : public Search
 {
 public:
+	NearestNeighborSearchWithColors();
+	~NearestNeighborSearchWithColors();
 	void buildIndex(const std::vector<Vector3f> &targetPoints,
-					const std::vector<Vector3f> &targetColors,
-					const std::vector<Vector3f> &targetNormals);
+					const std::vector<Vector3f> *targetColors = nullptr,
+					const std::vector<Vector3f> *targetNormals = nullptr);
 	std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints,
-									const std::vector<Vector3f> &transformedColors,
-									const std::vector<Vector3f> &transformedNormals);
+									const std::vector<Vector3f> *transformedColors = nullptr,
+									const std::vector<Vector3f> *transformedNormals = nullptr);
+
+protected:
+	void _buildIndex(const std::vector<Vector3f> &targetPoints,
+					 const std::vector<Vector3f> &targetColors,
+					 const std::vector<Vector3f> &targetNormals);
+	std::vector<Match> _queryMatches(const std::vector<Vector3f> &transformedPoints,
+									 const std::vector<Vector3f> &transformedColors,
+									 const std::vector<Vector3f> &transformedNormals);
+
+	int m_nTrees;
+	flann::Index<flann::L2<float>> *m_index;
+	float *m_flatPoints;
 };
 
 /**
