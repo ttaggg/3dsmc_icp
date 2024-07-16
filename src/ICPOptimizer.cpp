@@ -181,7 +181,7 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         // Run the solver (for one iteration).
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        // std::cout << summary.BriefReport() << std::endl;
+        std::cout << summary.BriefReport() << std::endl;
         // std::cout << summary.FullReport() << std::endl;
 
         // Update the current pose estimate (we always update the pose from the left, using left-increment notation).
