@@ -8,5 +8,14 @@ useSymmetric: true
 correspondenceMethod: NN
 # Other settings
 matchingMaxDistance: 1
-nbOfIterations: 10
-visualize: true
+nbOfIterations: 20
+visualize: false
+
+evaluateRMSENaive: true # doesn't make sense for partial
+evaluateRMSENearest: true
+evaluateRMSENearestPlane: true
+evaluateTransforms: true
+evaluateTime: true
+
+experimentName: symmetric_nonlinear_nn_partial
+dataDir: ../../Data/greyc_partial/

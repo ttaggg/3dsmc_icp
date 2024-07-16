@@ -1,5 +1,12 @@
 #pragma once
 
+#include <stddef.h> // for size_t
+#include <string>   // for basic_string, string
+#include <vector>   // for vector
+#include "Eigen.h"  // Eigen
+
+class SimpleMesh;
+
 class DataLoader
 {
 public:

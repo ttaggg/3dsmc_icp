@@ -1,31 +1,37 @@
 #pragma once
 
-#include <Eigen/Dense>
-#include <random>
-#include <cmath>
+#include <filesystem>
+#include <random>           // for mt19937
+#include <initializer_list> // for initializer_list
+#include <memory>           // for unique_ptr
+#include <string>           // for string
 #include "Eigen.h"
-#include "SimpleMesh.h"
-#include "ICPOptimizer.h"
-#include "PointCloud.h"
-#include "DataLoader.h"
 
-#define OPEN3D_ENABLED 1
-#ifndef OPEN3D_ENABLED 1
-#include <Open3D/Open3D.h>
-#endif
+class DataLoader;
+class ICPOptimizer;
+class ICPConfiguration;
+class SimpleMesh;
+class VirtualSensor;
+
+namespace fs = std::filesystem;
 
 bool containsSubstring(const std::string &str, const std::string &substring);
 
-std::string formatString(std::initializer_list<std::string> elements);
-
+#define OPEN3D_ENABLED
+#ifdef OPEN3D_ENABLED
 void visualize(std::string filenameOutput);
+#endif
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
+                     Matrix4f &gtTransform,
                      ICPOptimizer *optimizer,
-                     std::string filenameOutput,
-                     std::vector<std::vector<double>> &metric);
+                     std::string filenameOutput);
+
 Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_trans);
+
 ICPOptimizer *createOptimizer(const ICPConfiguration &config);
 
 std::unique_ptr<DataLoader> createDataloader(const std::string &directoryPath);
+
+void writeRoomMesh(VirtualSensor &sensor, Matrix4f &currentCameraPose, fs::path outputDir);

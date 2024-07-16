@@ -47,6 +47,7 @@ set(HEADER_FILES
     include/ICPConfiguration.h
     include/DataLoader.h
     include/Utils.h
+    include/Evaluator.h
     external/data_utils/FreeImageHelper.h
 )
 
@@ -58,6 +59,7 @@ set(SOURCE_FILES
     src/ICPConfiguration.cpp
     src/DataLoader.cpp
     src/Utils.cpp
+    src/Evaluator.cpp
 )
 
 add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})

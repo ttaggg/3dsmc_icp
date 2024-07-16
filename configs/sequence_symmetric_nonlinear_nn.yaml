@@ -1,11 +1,12 @@
 # Task
 runSequenceICP: true
 # ICP type
-useLinearICP: true
+useLinearICP: false
 # ICP objective(s)
 useSymmetric: true
 # Correspondence method (NN / SHOOT)
-correspondenceMethod: SHOOT
+correspondenceMethod: NN
+useColors: false
 # Other settings
 matchingMaxDistance: 0.1
 nbOfIterations: 10
@@ -14,5 +15,5 @@ evaluateRMSENearest: true
 evaluateTransforms: true
 evaluateTime: true
 
-experimentName: sequence_symmetric_linear_shot
+experimentName: room_symmetric_nonlinear_nn
 dataDir: ../../Data/rgbd_dataset_freiburg1_xyz/

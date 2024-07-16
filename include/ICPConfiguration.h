@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string> // for basic_string, string
+
 /**
  * enum for correspondence method: nearest neighbor or projective
  */
@@ -35,6 +37,14 @@ public:
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;
     bool visualize = false;
+    bool evaluateRMSENaive = false;
+    bool evaluateRMSENearest = false;
+    bool evaluateRMSENearestPlane = false;
+    bool evaluateTransforms = false;
+    bool evaluateTime = false;
+    // Experiment
+    std::string experimentName = "default";
+    std::string dataDir = ".";
 
     void loadFromYaml(const std::string &filename);
     void show();

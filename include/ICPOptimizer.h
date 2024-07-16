@@ -3,16 +3,17 @@
 // The Google logging library (GLOG), used in Ceres, has a conflict with Windows defined constants. This definitions prevents GLOG to use the same constants
 #define GLOG_NO_ABBREVIATED_SEVERITIES
 
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
-#include <flann/flann.hpp>
+#include <ceres/ceres.h>      // for Solver
+#include <memory>             // for unique_ptr
+#include <vector>             // for vector
+#include "Eigen.h"            // for vector
+#include "ICPConfiguration.h" // for CorrMethod
+#include "PointCloud.h"       // for PointCloud
+#include "Search.h"           // for Match (ptr only), Search
 
-#include "SimpleMesh.h"
-#include "Search.h"
-#include "PointCloud.h"
-#include "Constraints.h"
-#include "ProcrustesAligner.h"
-#include "ICPConfiguration.h"
+class Evaluator;
+template <typename T>
+class PoseIncrement;
 
 /**
  * ICP optimizer - Abstract Base Class
@@ -29,17 +30,13 @@ public:
     void setNbOfIterations(unsigned nIterations);
 
     virtual ~ICPOptimizer() = default;
-    virtual void estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric) = 0;
-    double PointToPointComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Match> &match,
-        const Eigen::Matrix4f &transformation);
-    double PointToPlaneComputeRMSE(
-        const PointCloud &source,
-        const PointCloud &target,
-        const std::vector<Match> &match,
-        const Eigen::Matrix4f &transformation);
+    virtual void estimatePose(const PointCloud &source,
+                              const PointCloud &target,
+                              Matrix4f &initialPose,
+                              Matrix4f &groundPose) = 0;
+
+    void setEvaluator(Evaluator *evaluator);
+    Evaluator *evaluator;
 
 protected:
     bool m_bUsePointToPointConstraints;
@@ -48,6 +45,7 @@ protected:
     bool m_weightPointToPlaneConstraints;
     bool m_bUseSymmetricConstraints;
     bool m_weightSymmetricConstraints;
+    bool m_evaluate = false;
     unsigned m_nIterations;
     std::unique_ptr<Search> m_corrAlgo;
     std::vector<Vector3f> transformPoints(const std::vector<Vector3f> &sourcePoints, const Matrix4f &pose);
@@ -65,7 +63,7 @@ public:
     virtual void estimatePose(const PointCloud &source,
                               const PointCloud &target,
                               Matrix4f &initialPose,
-                              std::vector<std::vector<double>> &metric) override;
+                              Matrix4f &groundPose) override;
 
 private:
     void configureSolver(ceres::Solver::Options &options);
@@ -88,7 +86,7 @@ public:
     virtual void estimatePose(const PointCloud &source,
                               const PointCloud &target,
                               Matrix4f &initialPose,
-                              std::vector<std::vector<double>> &metric) override;
+                              Matrix4f &groundPose) override;
 
 private:
     Matrix4f estimatePosePointToPoint(const std::vector<Vector3f> &sourcePoints,

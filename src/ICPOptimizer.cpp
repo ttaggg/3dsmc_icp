@@ -1,4 +1,14 @@
 #include "ICPOptimizer.h"
+#include <iostream>            // for basic_o...
+#include <math.h>              // for M_PI
+#include <stdlib.h>            // for exit
+#include <time.h>              // for clock
+#include <algorithm>           // for fill_n
+#include <utility>             // for move, swap
+#include "Constraints.h"       // for PoseInc...
+#include "Eigen.h"             // for Eigen
+#include "Evaluator.h"         // for Evaluator
+#include "ProcrustesAligner.h" // for Procrus...
 
 /**
  * ICP optimizer - Abstract Base Class
@@ -12,6 +22,12 @@ ICPOptimizer::ICPOptimizer() : m_bUsePointToPlaneConstraints{false},
 void ICPOptimizer::setMatchingMaxDistance(float maxDistance)
 {
     m_corrAlgo->setMatchingMaxDistance(maxDistance);
+}
+
+void ICPOptimizer::setEvaluator(Evaluator *evaluator_)
+{
+    evaluator = evaluator_;
+    m_evaluate = true;
 }
 
 void ICPOptimizer::setCorrespondenceMethod(CorrMethod method, bool useColors)
@@ -111,83 +127,13 @@ void ICPOptimizer::pruneCorrespondences(const std::vector<Vector3f> &sourceNorma
     }
 }
 
-double ICPOptimizer::PointToPointComputeRMSE(
-    const PointCloud &source,
-    const PointCloud &target,
-    const std::vector<Match> &match,
-    const Eigen::Matrix4f &transformation)
-{
-
-    const auto source_p = source.getPoints();
-    const auto target_p = target.getPoints();
-
-    if (match.empty())
-        return 0.0;
-
-    double err = 0.0;
-    int unmatched = 0;
-    for (int i = 0; i < match.size(); i++)
-    {
-        const auto &m = match[i];
-        const auto &pt = source_p[i];
-
-        if (m.idx != -1)
-        {
-            auto pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
-            err += (pt_trans - target_p[m.idx]).norm();
-        }
-        else
-        {
-            unmatched++;
-        }
-        i++;
-    }
-
-    return std::sqrt(err / (double)(match.size() - unmatched));
-}
-
-double ICPOptimizer::PointToPlaneComputeRMSE(
-    const PointCloud &source,
-    const PointCloud &target,
-    const std::vector<Match> &match,
-    const Eigen::Matrix4f &transformation)
-{
-    const auto source_p = source.getPoints();
-    const auto target_p = target.getPoints();
-    const auto target_n = target.getNormals();
-
-    if (match.empty())
-        return 0.0;
-
-    double err = 0.0, r;
-    int i = 0;
-    int unmatched = 0;
-    for (int i = 0; i < match.size(); i++)
-    {
-        const auto &m = match[i];
-        const auto &pt = source_p[i];
-        if (m.idx != -1)
-        {
-            Eigen::Vector3f pt_trans = (transformation * Eigen::Vector4f(pt(0), pt(1), pt(2), 1.0)).block<3, 1>(0, 0);
-            r = (pt_trans - target_p[m.idx]).dot(target_n[m.idx]);
-            err += r * r;
-        }
-        else
-        {
-            unmatched++;
-        }
-        i++;
-    }
-    return std::sqrt(err / (double)(match.size() - unmatched));
-}
-
 /**
  * ICP optimizer - using Ceres for optimization.
  */
 
 CeresICPOptimizer::CeresICPOptimizer() {}
 
-void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric)
+void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, Matrix4f &groundPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
@@ -254,29 +200,15 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         std::cout << "Optimization iteration done." << std::endl;
 
         // Calculate Error metric
-        std::vector<double> _metric;
-        _metric.push_back(elapsedSecs);
-        _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
-        _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
-        tmp.push_back(_metric);
-
-        std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
-        std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
-    }
-
-    if (metric.size() != 0)
-    {
-        std::cout << "y" << std::endl;
-        for (int k = 0; k < metric.size(); k++)
+        if (m_evaluate)
         {
-            metric[k][0] += tmp[k][0];
-            metric[k][1] += tmp[k][1];
-            metric[k][2] += tmp[k][2];
+            evaluator->addMetrics(elapsedSecs,
+                                  source,
+                                  target,
+                                  matches,
+                                  estimatedPose,
+                                  groundPose);
         }
-    }
-    else
-    {
-        metric = tmp;
     }
 
     // Store result
@@ -359,7 +291,7 @@ void CeresICPOptimizer::
 
 LinearICPOptimizer::LinearICPOptimizer() {}
 
-void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, std::vector<std::vector<double>> &metric)
+void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud &target, Matrix4f &initialPose, Matrix4f &groundPose)
 {
     // Build the index of the FLANN tree (for fast nearest neighbor lookup).
     m_corrAlgo->buildIndex(target.getPoints(), &target.getColors(), &target.getNormals());
@@ -424,29 +356,15 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         std::cout << "Optimization iteration done." << std::endl;
 
         // Calculate Error metric
-        std::vector<double> _metric;
-        _metric.push_back(elapsedSecs);
-        _metric.push_back(PointToPointComputeRMSE(source, target, matches, estimatedPose));
-        _metric.push_back(PointToPlaneComputeRMSE(source, target, matches, estimatedPose));
-        tmp.push_back(_metric);
-
-        std::cout << "[Point To Point RMSE] " << _metric[1] << std::endl;
-        std::cout << "[Point To Plane RMSE] " << _metric[2] << std::endl;
-    }
-
-    if (metric.size() != 0)
-    {
-        std::cout << "y" << std::endl;
-        for (int k = 0; k < metric.size(); k++)
+        if (m_evaluate)
         {
-            metric[k][0] += tmp[k][0];
-            metric[k][1] += tmp[k][1];
-            metric[k][2] += tmp[k][2];
+            evaluator->addMetrics(elapsedSecs,
+                                  source,
+                                  target,
+                                  matches,
+                                  estimatedPose,
+                                  groundPose);
         }
-    }
-    else
-    {
-        metric = tmp;
     }
 
     // Store result
@@ -495,7 +413,7 @@ Matrix4f LinearICPOptimizer::
         b(4 * i + 3) = n.transpose() * diff;
     }
 
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+    CompleteOrthogonalDecomposition<MatrixXf> cod(A);
     VectorXf x = cod.solve(b);
 
     float alpha = x(0), beta = x(1), gamma = x(2);
@@ -554,7 +472,7 @@ Matrix4f LinearICPOptimizer::estimatePoseSymmetric(const std::vector<Vector3f> &
         b(4 * i + 3) = normalSum.transpose() * diff;
     }
 
-    Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXf> cod(A);
+    CompleteOrthogonalDecomposition<MatrixXf> cod(A);
     VectorXf x = cod.solve(b);
 
     float alpha = x(0), beta = x(1), gamma = x(2);

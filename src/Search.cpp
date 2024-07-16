@@ -1,4 +1,14 @@
-#include "Search.h"
+
+#include <stddef.h>                        // for size_t
+#include <iostream>                        // for basic_ostream
+#include <utility>                         // for move
+#include "flann/algorithms/dist.h"         // for L2
+#include "flann/algorithms/kdtree_index.h" // for KDTreeIndexParams
+#include "flann/flann.hpp"                 // for Index
+#include "flann/util/matrix.h"             // for Matrix
+#include "flann/util/params.h"             // for SearchParams
+#include "Eigen.h"                         // for MatrixBase::bin...
+#include "Search.h"                        // for MatrixBase::bin...
 
 Search::Search() : m_maxDistance{0.005f} {}
 
@@ -29,9 +39,9 @@ NearestNeighborSearch::~NearestNeighborSearch()
     }
 }
 
-void NearestNeighborSearch::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-                                       const std::vector<Eigen::Vector3f> *targetColors,
-                                       const std::vector<Eigen::Vector3f> *targetNormals)
+void NearestNeighborSearch::buildIndex(const std::vector<Vector3f> &targetPoints,
+                                       const std::vector<Vector3f> *targetColors,
+                                       const std::vector<Vector3f> *targetNormals)
 {
     std::cout << "Initializing FLANN index with " << targetPoints.size() << " points." << std::endl;
 
@@ -54,9 +64,9 @@ void NearestNeighborSearch::buildIndex(const std::vector<Eigen::Vector3f> &targe
     std::cout << "FLANN index created." << std::endl;
 }
 
-std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints,
-                                                       const std::vector<Eigen::Vector3f> *transformedColors,
-                                                       const std::vector<Eigen::Vector3f> *transformedNormals)
+std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                       const std::vector<Vector3f> *transformedColors,
+                                                       const std::vector<Vector3f> *transformedNormals)
 {
     if (!m_index)
     {
@@ -107,9 +117,9 @@ std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Eigen::
 /**
  * Nearest neighbor search using FLANN with color information.
  */
-void NearestNeighborSearchWithColors::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-                                                 const std::vector<Eigen::Vector3f> &targetColors,
-                                                 const std::vector<Eigen::Vector3f> &targetNormals)
+void NearestNeighborSearchWithColors::buildIndex(const std::vector<Vector3f> &targetPoints,
+                                                 const std::vector<Vector3f> &targetColors,
+                                                 const std::vector<Vector3f> &targetNormals)
 {
     // Assuming targetColors.size() == targetPoints.size()
     m_flatPoints = new float[targetPoints.size() * 6];
@@ -128,9 +138,9 @@ void NearestNeighborSearchWithColors::buildIndex(const std::vector<Eigen::Vector
     std::cout << "FLANN index with color created." << std::endl;
 }
 
-std::vector<Match> NearestNeighborSearchWithColors::queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints,
-                                                                 const std::vector<Eigen::Vector3f> &transformedColors,
-                                                                 const std::vector<Eigen::Vector3f> &transformedNormals)
+std::vector<Match> NearestNeighborSearchWithColors::queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                                 const std::vector<Vector3f> &transformedColors,
+                                                                 const std::vector<Vector3f> &transformedNormals)
 {
     // Assuming transformedColors.size() == transformedPoints.size()
     float *queryPoints = new float[transformedPoints.size() * 6];
@@ -192,16 +202,16 @@ NormalShootCorrespondence::~NormalShootCorrespondence()
     }
 }
 
-void NormalShootCorrespondence::buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-                                           const std::vector<Eigen::Vector3f> *targetColors,
-                                           const std::vector<Eigen::Vector3f> *targetNormals)
+void NormalShootCorrespondence::buildIndex(const std::vector<Vector3f> &targetPoints,
+                                           const std::vector<Vector3f> *targetColors,
+                                           const std::vector<Vector3f> *targetNormals)
 {
     return _buildIndex(targetPoints, *targetColors, *targetNormals);
 }
 
-void NormalShootCorrespondence::_buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-                                            const std::vector<Eigen::Vector3f> &targetColors,
-                                            const std::vector<Eigen::Vector3f> &targetNormals)
+void NormalShootCorrespondence::_buildIndex(const std::vector<Vector3f> &targetPoints,
+                                            const std::vector<Vector3f> &targetColors,
+                                            const std::vector<Vector3f> &targetNormals)
 {
     std::cout << "Initializing FLANN index with " << targetPoints.size() << " points." << std::endl;
 
@@ -244,7 +254,7 @@ std::vector<Match> NormalShootCorrespondence::_queryMatches(const std::vector<Ve
     {
         auto point = transformedPoints.at(idx);
         auto normal = transformedNormals.at(idx);
-        Eigen::Vector3f intersection;
+        Vector3f intersection;
         if (findRayIntersection(point, normal, intersection))
         {
             int matched_index = findNearestNeighbor(intersection);
@@ -259,7 +269,7 @@ std::vector<Match> NormalShootCorrespondence::_queryMatches(const std::vector<Ve
     return matches;
 }
 
-bool NormalShootCorrespondence::findRayIntersection(const Eigen::Vector3f &origin, const Eigen::Vector3f &direction, Eigen::Vector3f &intersection)
+bool NormalShootCorrespondence::findRayIntersection(const Vector3f &origin, const Vector3f &direction, Vector3f &intersection)
 {
     float queryPoint[3] = {origin.x(), origin.y(), origin.z()};
     flann::Matrix<float> query(queryPoint, 1, 3);
@@ -272,12 +282,12 @@ bool NormalShootCorrespondence::findRayIntersection(const Eigen::Vector3f &origi
 
     if (distances[0][0] <= m_maxDistance)
     {
-        Eigen::Vector3f nearestPoint(
+        Vector3f nearestPoint(
             m_flatPoints[indices[0][0] * 3],
             m_flatPoints[indices[0][0] * 3 + 1],
             m_flatPoints[indices[0][0] * 3 + 2]);
 
-        Eigen::Vector3f vec = nearestPoint - origin;
+        Vector3f vec = nearestPoint - origin;
         float t = vec.dot(direction) / direction.dot(direction);
         intersection = origin + t * direction;
 
@@ -291,7 +301,7 @@ bool NormalShootCorrespondence::findRayIntersection(const Eigen::Vector3f &origi
     return false;
 }
 
-int NormalShootCorrespondence::findNearestNeighbor(const Eigen::Vector3f &point)
+int NormalShootCorrespondence::findNearestNeighbor(const Vector3f &point)
 {
     float queryPoint[3] = {point.x(), point.y(), point.z()};
     flann::Matrix<float> query(queryPoint, 1, 3);

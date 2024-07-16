@@ -1,13 +1,10 @@
-#include <filesystem>
-#include <string>
-#include <vector>
-#include <iostream>
-#include "SimpleMesh.h"
 #include "DataLoader.h"
-#include "ICPOptimizer.h"
-#include "SimpleMesh.h"
-#include "PointCloud.h"
-#include "Utils.h"
+#include <filesystem>   // for directory_iterator, path, directory_entry
+#include <iostream>     // for basic_ostream, operator<<, endl, cerr, cout
+#include "SimpleMesh.h" // for SimpleMesh
+#include "Utils.h"      // for formatString
+
+namespace fs = std::filesystem;
 
 size_t DataLoader::size()
 {
@@ -76,8 +73,8 @@ bool PartialMeshDataLoader::createMeshes(size_t index,
         return false;
     }
 
-    std::string sourceMeshPath = formatString({meshPaths[index], "/1.off"});
-    std::string targetMeshPath = formatString({meshPaths[index], "/2.off"});
+    std::string sourceMeshPath = fs::path{meshPaths[index]} / fs::path{"1.off"};
+    std::string targetMeshPath = fs::path{meshPaths[index]} / fs::path{"2.off"};
 
     std::cout << sourceMeshPath << std::endl;
     std::cout << targetMeshPath << std::endl;

@@ -1,22 +1,31 @@
 #include "Utils.h"
+#include <cmath>              // for M_PI
+#include <iostream>           // for basic_ostream
+#include <sstream>            // for basic_ostringst...
+#include <sys/stat.h>         //
+#include <sys/types.h>        //
+#include <utility>            // for move
+#include "DataLoader.h"       // for MeshDataLoader
+#include "ICPConfiguration.h" // for ICPConfiguration
+#include "ICPOptimizer.h"     // for ICPOptimizer
+#include "PointCloud.h"       // for PointCloud
+#include "SimpleMesh.h"       // for SimpleMesh
+#include "VirtualSensor.h"    // for VirtualSensor
+#include "Eigen.h"
+
+#ifdef OPEN3D_ENABLED
+#include <Open3D/Open3D.h>
+#endif
+
+namespace fs = std::filesystem;
 
 bool containsSubstring(const std::string &str, const std::string &substring)
 {
     return str.find(substring) != std::string::npos;
 }
 
-std::string formatString(std::initializer_list<std::string> elements)
-// formatString without installing fmt or C++20
-{
-    std::ostringstream oss;
-    for (auto &el : elements)
-    {
-        oss << el;
-    }
-    return oss.str();
-}
-
-#ifndef OPEN3D_ENABLED 1
+#define OPEN3D_ENABLED
+#ifdef OPEN3D_ENABLED
 void visualize(std::string filenameOutput)
 {
 
@@ -40,16 +49,16 @@ void visualize(std::string filenameOutput)
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
+                     Matrix4f &gtTransform,
                      ICPOptimizer *optimizer,
-                     std::string filenameOutput,
-                     std::vector<std::vector<double>> &metric)
+                     std::string filenameOutput)
 {
 
     PointCloud source{sourceMesh};
     PointCloud target{targetMesh};
 
     Matrix4f estimatedPose = Matrix4f::Identity();
-    optimizer->estimatePose(source, target, estimatedPose, metric);
+    optimizer->estimatePose(source, target, estimatedPose, gtTransform);
 
     // Visualize the resulting joined mesh. We add triangulated spheres for point matches.
     SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
@@ -77,17 +86,17 @@ Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_t
     float angle_z_rad = angle_z * M_PI / 180.0f;
 
     // Generate rotation matrices
-    Eigen::Matrix3f rotation_x;
-    rotation_x = Eigen::AngleAxisf(angle_x_rad, Vector3f::UnitX());
+    Matrix3f rotation_x;
+    rotation_x = AngleAxisf(angle_x_rad, Vector3f::UnitX());
 
-    Eigen::Matrix3f rotation_y;
-    rotation_y = Eigen::AngleAxisf(angle_y_rad, Vector3f::UnitY());
+    Matrix3f rotation_y;
+    rotation_y = AngleAxisf(angle_y_rad, Vector3f::UnitY());
 
-    Eigen::Matrix3f rotation_z;
-    rotation_z = Eigen::AngleAxisf(angle_z_rad, Vector3f::UnitZ());
+    Matrix3f rotation_z;
+    rotation_z = AngleAxisf(angle_z_rad, Vector3f::UnitZ());
 
     // Combined rotation matrix
-    Eigen::Matrix3f rotation = rotation_z * rotation_y * rotation_x;
+    Matrix3f rotation = rotation_z * rotation_y * rotation_x;
 
     // Generate random translation
     Vector3f translation(trans_dist(rng), trans_dist(rng), trans_dist(rng));
@@ -132,5 +141,25 @@ std::unique_ptr<DataLoader> createDataloader(const std::string &directoryPath)
     else
     {
         return std::make_unique<MeshDataLoader>();
+    }
+}
+
+void writeRoomMesh(VirtualSensor &sensor, Matrix4f &currentCameraPose, fs::path outputDir)
+{
+    fs::create_directories(outputDir);
+
+    SimpleMesh currentDepthMesh{sensor, currentCameraPose, 0.1f};
+    SimpleMesh currentCameraMesh = SimpleMesh::camera(currentCameraPose, 0.0015f);
+    SimpleMesh resultingMesh = SimpleMesh::joinMeshes(currentDepthMesh,
+                                                      currentCameraMesh,
+                                                      Matrix4f::Identity(),
+                                                      true);
+
+    fs::path outputMeshPath = outputDir / fs::path{std::to_string(sensor.getCurrentFrameCnt()) + ".off"};
+
+    if (!resultingMesh.writeMesh(outputMeshPath))
+    {
+        std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+        return;
     }
 }

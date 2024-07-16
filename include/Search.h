@@ -1,13 +1,24 @@
 #pragma once
 
-#include <flann/flann.hpp>
-#include "Eigen.h"
+#include <vector>  // for vector
+#include "Eigen.h" // for vector, MINF
+
+namespace flann
+{
+	template <class T>
+	struct L2;
+}
+namespace flann
+{
+	template <typename Distance>
+	class Index;
+}
 
 struct Match
 {
 	int idx;
 	float weight;
-	Eigen::Vector3f color = {MINF, MINF, MINF};
+	Vector3f color = {MINF, MINF, MINF};
 };
 
 class Search
@@ -15,12 +26,12 @@ class Search
 public:
 	virtual ~Search() {}
 	virtual void setMatchingMaxDistance(float maxDistance);
-	virtual void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-							const std::vector<Eigen::Vector3f> *targetColors = nullptr,
+	virtual void buildIndex(const std::vector<Vector3f> &targetPoints,
+							const std::vector<Vector3f> *targetColors = nullptr,
 							const std::vector<Vector3f> *targetNormals = nullptr) = 0;
 	virtual std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints,
-											const std::vector<Eigen::Vector3f> *transformedColors = nullptr,
-											const std::vector<Eigen::Vector3f> *transformedNormals = nullptr) = 0;
+											const std::vector<Vector3f> *transformedColors = nullptr,
+											const std::vector<Vector3f> *transformedNormals = nullptr) = 0;
 
 protected:
 	float m_maxDistance;
@@ -36,12 +47,12 @@ class NearestNeighborSearch : public Search
 public:
 	NearestNeighborSearch();
 	~NearestNeighborSearch();
-	void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-					const std::vector<Eigen::Vector3f> *targetColors = nullptr,
-					const std::vector<Eigen::Vector3f> *targetNormals = nullptr);
-	std::vector<Match> queryMatches(const std::vector<Eigen::Vector3f> &transformedPoints,
-									const std::vector<Eigen::Vector3f> *transformedColors = nullptr,
-									const std::vector<Eigen::Vector3f> *transformedNormals = nullptr);
+	void buildIndex(const std::vector<Vector3f> &targetPoints,
+					const std::vector<Vector3f> *targetColors = nullptr,
+					const std::vector<Vector3f> *targetNormals = nullptr);
+	std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints,
+									const std::vector<Vector3f> *transformedColors = nullptr,
+									const std::vector<Vector3f> *transformedNormals = nullptr);
 
 protected:
 	int m_nTrees;
@@ -52,12 +63,12 @@ protected:
 class NearestNeighborSearchWithColors : public NearestNeighborSearch
 {
 public:
-	void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-					const std::vector<Eigen::Vector3f> &targetColors,
-					const std::vector<Eigen::Vector3f> &targetNormals);
+	void buildIndex(const std::vector<Vector3f> &targetPoints,
+					const std::vector<Vector3f> &targetColors,
+					const std::vector<Vector3f> &targetNormals);
 	std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints,
-									const std::vector<Eigen::Vector3f> &transformedColors,
-									const std::vector<Eigen::Vector3f> &transformedNormals);
+									const std::vector<Vector3f> &transformedColors,
+									const std::vector<Vector3f> &transformedNormals);
 };
 
 /**
@@ -70,28 +81,28 @@ public:
 	NormalShootCorrespondence();
 	~NormalShootCorrespondence();
 
-	void buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-					const std::vector<Eigen::Vector3f> *targetColors = nullptr,
+	void buildIndex(const std::vector<Vector3f> &targetPoints,
+					const std::vector<Vector3f> *targetColors = nullptr,
 					const std::vector<Vector3f> *targetNormals = nullptr);
 	std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints,
-									const std::vector<Eigen::Vector3f> *transformedColors = nullptr,
+									const std::vector<Vector3f> *transformedColors = nullptr,
 									const std::vector<Vector3f> *transformedNormals = nullptr);
 
 private:
-	std::vector<Eigen::Vector3f> m_targetPoints;
+	std::vector<Vector3f> m_targetPoints;
 	int m_nTrees;
 	float *m_flatPoints;
 	flann::Index<flann::L2<float>> *m_index;
 
-	void _buildIndex(const std::vector<Eigen::Vector3f> &targetPoints,
-					 const std::vector<Eigen::Vector3f> &targetColors,
+	void _buildIndex(const std::vector<Vector3f> &targetPoints,
+					 const std::vector<Vector3f> &targetColors,
 					 const std::vector<Vector3f> &targetNormals);
 	std::vector<Match> _queryMatches(const std::vector<Vector3f> &transformedPoints,
-									 const std::vector<Eigen::Vector3f> &transformedColors,
+									 const std::vector<Vector3f> &transformedColors,
 									 const std::vector<Vector3f> &transformedNormals);
 
-	bool findRayIntersection(const Eigen::Vector3f &origin,
-							 const Eigen::Vector3f &direction,
-							 Eigen::Vector3f &intersection);
-	int findNearestNeighbor(const Eigen::Vector3f &point);
+	bool findRayIntersection(const Vector3f &origin,
+							 const Vector3f &direction,
+							 Vector3f &intersection);
+	int findNearestNeighbor(const Vector3f &point);
 };

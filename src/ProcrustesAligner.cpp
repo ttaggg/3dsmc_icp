@@ -1,4 +1,5 @@
 #include "ProcrustesAligner.h"
+#include "SimpleMesh.h"
 
 Matrix4f ProcrustesAligner::estimatePose(const std::vector<Vector3f> &sourcePoints, const std::vector<Vector3f> &targetPoints)
 {

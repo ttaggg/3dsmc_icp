@@ -1,8 +1,10 @@
-#include <iostream>
-#include <cassert>
-#include <yaml-cpp/yaml.h>
-
 #include "ICPConfiguration.h"
+#include <stdlib.h>        // for exit
+#include <cassert>         // for assert
+#include <exception>       // for exception
+#include <iostream>        // for basic_ostream, endl, operator<<
+#include <stdexcept>       // for runtime_error
+#include <yaml-cpp/yaml.h> // for yaml
 
 void ICPConfiguration::_loadFromYaml(const std::string &filename)
 {
@@ -88,6 +90,39 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
     {
         visualize = config["visualize"].as<bool>();
     }
+
+    if (config["evaluateRMSENaive"])
+    {
+        evaluateRMSENaive = config["evaluateRMSENaive"].as<bool>();
+    }
+
+    if (config["evaluateRMSENearest"])
+    {
+        evaluateRMSENearest = config["evaluateRMSENearest"].as<bool>();
+    }
+
+    if (config["evaluateRMSENearestPlane"])
+    {
+        evaluateRMSENearestPlane = config["evaluateRMSENearestPlane"].as<bool>();
+    }
+
+    if (config["evaluateTransforms"])
+    {
+        evaluateTransforms = config["evaluateTransforms"].as<bool>();
+    }
+    if (config["evaluateTime"])
+    {
+        evaluateTime = config["evaluateTime"].as<bool>();
+    }
+
+    if (config["experimentName"])
+    {
+        experimentName = config["experimentName"].as<std::string>();
+    }
+    if (config["dataDir"])
+    {
+        dataDir = config["dataDir"].as<std::string>();
+    }
 }
 
 void ICPConfiguration::loadFromYaml(const std::string &filename)
@@ -158,7 +193,17 @@ void ICPConfiguration::show()
     std::cout << "====== Other settings ======" << std::endl;
     std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
     std::cout << "nbOfIterations: " << nbOfIterations << std::endl;
+
+    std::cout << "======== Evaluation ========" << std::endl;
+
+    std::cout << "Experiment name: " << experimentName << std::endl;
     std::cout << "Visualization: " << visualize << std::endl;
+    std::cout << "Evaluate RMSE naive: " << evaluateRMSENaive << std::endl;
+    std::cout << "Evaluate RMSE NN: " << evaluateRMSENearest << std::endl;
+    std::cout << "Evaluate RMSE Plane: " << evaluateRMSENearestPlane << std::endl;
+    std::cout << "Evaluate transforms: " << evaluateTransforms << std::endl;
+    std::cout << "Evaluate time: " << evaluateTime << std::endl;
+    std::cout << "Data directory: " << dataDir << std::endl;
 
     std::cout << "============================" << std::endl;
 
