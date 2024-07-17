@@ -1,0 +1,19 @@
+useLinearICP: false
+usePointToPoint: true
+correspondenceMethod: NN
+useColors: false
+dataDir: ../../Data/greyc/
+experimentName: nonlinear_point_nn
+
+# Other settings
+runShapeICP: true
+matchingMaxDistance: 5
+nbOfIterations: 40
+visualize: false
+writeMeshes: true
+evaluateRMSENaive: true # doesn't make sense for partial
+evaluateRMSENearest: true
+evaluateRMSENearestPlane: true
+evaluateTransforms: true
+evaluateTime: true
+
