@@ -4,130 +4,84 @@
 #include <exception>       // for exception
 #include <iostream>        // for basic_ostream, endl, operator<<
 #include <stdexcept>       // for runtime_error
+#include <variant>         // for variant
+#include <unordered_map>   // for unordered_map
 #include <yaml-cpp/yaml.h> // for yaml
+
+std::unordered_map<std::string, ConfigItem> createTaskConfigMap(ICPConfiguration &config)
+{
+    return {
+        {"runShapeICP", {&config.runShapeICP}},
+        {"runSequenceICP", {&config.runSequenceICP}},
+        {"useLinearICP", {&config.useLinearICP}},
+        {"usePointToPoint", {&config.usePointToPoint}},
+        {"weightPointToPoint", {&config.weightPointToPoint}},
+        {"usePointToPlane", {&config.usePointToPlane}},
+        {"weightPointToPlane", {&config.weightPointToPlane}},
+        {"useSymmetric", {&config.useSymmetric}},
+        {"weightSymmetric", {&config.weightSymmetric}},
+    };
+}
+std::unordered_map<std::string, ConfigItem> createTrainingConfigMap(ICPConfiguration &config)
+{
+    return {
+        {"useColors", {&config.useColors}},
+        {"correspondenceMethod", {&config.correspondenceMethod}},
+        {"matchingMaxDistance", {&config.matchingMaxDistance}},
+        {"nbOfIterations", {&config.nbOfIterations}},
+    };
+}
+std::unordered_map<std::string, ConfigItem> createEvalConfigMap(ICPConfiguration &config)
+{
+    return {
+        {"visualize", {&config.visualize}},
+        {"writeMeshes", {&config.writeMeshes}},
+        {"evaluateRMSENaive", {&config.evaluateRMSENaive}},
+        {"evaluateRMSENearest", {&config.evaluateRMSENearest}},
+        {"evaluateRMSENearestPlane", {&config.evaluateRMSENearestPlane}},
+        {"evaluateTransforms", {&config.evaluateTransforms}},
+        {"evaluateTime", {&config.evaluateTime}},
+    };
+}
+std::unordered_map<std::string, ConfigItem> createExperimentConfigMap(ICPConfiguration &config)
+{
+    return {
+        {"experimentName", {&config.experimentName}},
+        {"dataDir", {&config.dataDir}}};
+}
+
+void ICPConfiguration::_setConfig(std::unordered_map<std::string, ConfigItem> &configMap, YAML::Node config)
+{
+    for (const auto &[key, item] : configMap)
+    {
+        if (config[key])
+        {
+            if (auto boolPtr = std::get_if<bool *>(&item.value))
+                **boolPtr = config[key].as<bool>();
+            else if (auto doublePtr = std::get_if<double *>(&item.value))
+                **doublePtr = config[key].as<double>();
+            else if (auto floatPtr = std::get_if<float *>(&item.value))
+                **floatPtr = config[key].as<float>();
+            else if (auto intPtr = std::get_if<int *>(&item.value))
+                **intPtr = config[key].as<int>();
+            else if (auto stringPtr = std::get_if<std::string *>(&item.value))
+                **stringPtr = config[key].as<std::string>();
+        }
+    }
+}
 
 void ICPConfiguration::_loadFromYaml(const std::string &filename)
 {
     YAML::Node config = YAML::LoadFile(filename);
 
-    // Task
-    if (config["runShapeICP"])
-    {
-        runShapeICP = config["runShapeICP"].as<bool>();
-    }
-    if (config["runSequenceICP"])
-    {
-        runSequenceICP = config["runSequenceICP"].as<bool>();
-    }
-
-    // ICP type
-    if (config["useLinearICP"])
-    {
-        useLinearICP = config["useLinearICP"].as<bool>();
-    }
-
-    // ICP objective(s).
-    if (config["usePointToPoint"])
-    {
-        usePointToPoint = config["usePointToPoint"].as<bool>();
-    }
-    if (config["weightPointToPoint"])
-    {
-        weightPointToPoint = config["weightPointToPoint"].as<double>();
-    }
-    if (config["usePointToPlane"])
-    {
-        usePointToPlane = config["usePointToPlane"].as<bool>();
-    }
-    if (config["weightPointToPlane"])
-    {
-        weightPointToPlane = config["weightPointToPlane"].as<double>();
-    }
-    if (config["useSymmetric"])
-    {
-        useSymmetric = config["useSymmetric"].as<bool>();
-    }
-    if (config["weightSymmetric"])
-    {
-        weightSymmetric = config["weightSymmetric"].as<double>();
-    }
-
-    // Whether to use color information.
-    if (config["useColors"])
-    {
-        useColors = config["useColors"].as<bool>();
-    }
-
-    // Other setting.
-    if (config["matchingMaxDistance"])
-    {
-        matchingMaxDistance = config["matchingMaxDistance"].as<float>();
-    }
-    if (config["nbOfIterations"])
-    {
-        nbOfIterations = config["nbOfIterations"].as<int>();
-    }
-
-    // Correspondence type.
-    if (config["correspondenceMethod"])
-    {
-        std::string method = config["correspondenceMethod"].as<std::string>();
-        if (method == "NN")
-        {
-            correspondenceMethod = NN;
-        }
-        else if (method == "SHOOT")
-        {
-            correspondenceMethod = SHOOT;
-        }
-        else
-        {
-            throw std::runtime_error("Unknown correspondence method: " + method);
-        }
-    }
-
-    if (config["visualize"])
-    {
-        visualize = config["visualize"].as<bool>();
-    }
-
-    if (config["writeMeshes"])
-    {
-        writeMeshes = config["writeMeshes"].as<bool>();
-    }
-
-    if (config["evaluateRMSENaive"])
-    {
-        evaluateRMSENaive = config["evaluateRMSENaive"].as<bool>();
-    }
-
-    if (config["evaluateRMSENearest"])
-    {
-        evaluateRMSENearest = config["evaluateRMSENearest"].as<bool>();
-    }
-
-    if (config["evaluateRMSENearestPlane"])
-    {
-        evaluateRMSENearestPlane = config["evaluateRMSENearestPlane"].as<bool>();
-    }
-
-    if (config["evaluateTransforms"])
-    {
-        evaluateTransforms = config["evaluateTransforms"].as<bool>();
-    }
-    if (config["evaluateTime"])
-    {
-        evaluateTime = config["evaluateTime"].as<bool>();
-    }
-
-    if (config["experimentName"])
-    {
-        experimentName = config["experimentName"].as<std::string>();
-    }
-    if (config["dataDir"])
-    {
-        dataDir = config["dataDir"].as<std::string>();
-    }
+    auto taskConfigMap = createTaskConfigMap(*this);
+    _setConfig(taskConfigMap, config);
+    auto trainingConfigMap = createTrainingConfigMap(*this);
+    _setConfig(trainingConfigMap, config);
+    auto evalConfigMap = createEvalConfigMap(*this);
+    _setConfig(evalConfigMap, config);
+    auto experimentConfigMap = createExperimentConfigMap(*this);
+    _setConfig(experimentConfigMap, config);
 }
 
 void ICPConfiguration::loadFromYaml(const std::string &filename)
@@ -144,75 +98,49 @@ void ICPConfiguration::loadFromYaml(const std::string &filename)
     _sanityCheck();
 }
 
+void ICPConfiguration::_showConfig(std::unordered_map<std::string, ConfigItem> &configMap)
+{
+
+    for (const auto &[key, item] : configMap)
+    {
+        std::cout << key << ": ";
+        if (auto boolPtr = std::get_if<bool *>(&item.value))
+            std::cout << (**boolPtr ? "true" : "false");
+        else if (auto doublePtr = std::get_if<double *>(&item.value))
+            std::cout << **doublePtr;
+        else if (auto floatPtr = std::get_if<float *>(&item.value))
+            std::cout << **floatPtr;
+        else if (auto intPtr = std::get_if<int *>(&item.value))
+            std::cout << **intPtr;
+        else if (auto stringPtr = std::get_if<std::string *>(&item.value))
+            std::cout << **stringPtr;
+        std::cout << std::endl;
+    }
+}
+
 void ICPConfiguration::show()
 {
+
     std::cout << "============================" << std::endl;
     std::cout << "Current config values: " << std::endl;
-    std::cout << std::endl;
 
-    std::cout << "=========== Task ===========" << std::endl;
-    if (runShapeICP)
-    {
-        std::cout << "Shape ICP" << std::endl;
-    }
-    else if (runSequenceICP)
-    {
-        std::cout << "Room Sequence ICP" << std::endl;
-    }
+    std::cout << "==========  Task  ==========" << std::endl;
+    auto taskConfigMap = createTaskConfigMap(*this);
+    _showConfig(taskConfigMap);
 
-    std::cout << "=========== Type ===========" << std::endl;
-    if (useLinearICP)
-    {
-        std::cout << "Linearized ICP" << std::endl;
-    }
-    else
-    {
-        std::cout << "Nonlinear ICP" << std::endl;
-    }
+    std::cout << "========  Training  ========" << std::endl;
+    auto trainingConfigMap = createTrainingConfigMap(*this);
+    _showConfig(trainingConfigMap);
 
-    std::cout << "======== Objectives ========" << std::endl;
-    if (usePointToPoint)
-    {
-        std::cout << "usePointToPoint with weight: " << weightPointToPoint << std::endl;
-    }
-    if (usePointToPlane)
-    {
-        std::cout << "usePointToPlane with weight: " << weightPointToPlane << std::endl;
-    }
-    if (useSymmetric)
-    {
-        std::cout << "useSymmetric with weight: " << weightSymmetric << std::endl;
-    }
+    std::cout << "=======  Evaluation  =======" << std::endl;
+    auto evalConfigMap = createEvalConfigMap(*this);
+    _showConfig(evalConfigMap);
 
-    std::cout << "====== Correspondence ======" << std::endl;
-    if (correspondenceMethod == NN)
-    {
-        std::cout << "correspondenceMethod: Nearest Neighbors" << std::endl;
-    }
-    else if (correspondenceMethod == SHOOT)
-    {
-        std::cout << "correspondenceMethod: Normal Shoot" << std::endl;
-    }
-    std::cout << "useColors: " << useColors << std::endl;
-
-    std::cout << "====== Other settings ======" << std::endl;
-    std::cout << "matchingMaxDistance: " << matchingMaxDistance << std::endl;
-    std::cout << "nbOfIterations: " << nbOfIterations << std::endl;
-
-    std::cout << "======== Evaluation ========" << std::endl;
-
-    std::cout << "Experiment name: " << experimentName << std::endl;
-    std::cout << "Visualization: " << visualize << std::endl;
-    std::cout << "Write meshes: " << writeMeshes << std::endl;
-    std::cout << "Evaluate RMSE naive: " << evaluateRMSENaive << std::endl;
-    std::cout << "Evaluate RMSE NN: " << evaluateRMSENearest << std::endl;
-    std::cout << "Evaluate RMSE Plane: " << evaluateRMSENearestPlane << std::endl;
-    std::cout << "Evaluate transforms: " << evaluateTransforms << std::endl;
-    std::cout << "Evaluate time: " << evaluateTime << std::endl;
-    std::cout << "Data directory: " << dataDir << std::endl;
+    std::cout << "=======  Experiment  =======" << std::endl;
+    auto experimentConfigMap = createExperimentConfigMap(*this);
+    _showConfig(experimentConfigMap);
 
     std::cout << "============================" << std::endl;
-
     std::cout << std::endl;
 }
 
@@ -240,6 +168,6 @@ void ICPConfiguration::_sanityCheck()
 
     if (useColors)
     {
-        assert(correspondenceMethod != SHOOT && "Color is not supported for normal shoot.");
+        assert(correspondenceMethod != "SHOOT" && "Color is not supported for normal shoot.");
     }
 }

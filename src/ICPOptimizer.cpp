@@ -30,9 +30,9 @@ void ICPOptimizer::setEvaluator(Evaluator *evaluator_)
     m_evaluate = true;
 }
 
-void ICPOptimizer::setCorrespondenceMethod(CorrMethod method, bool useColors)
+void ICPOptimizer::setCorrespondenceMethod(std::string method, bool useColors)
 {
-    if (method == NN)
+    if (method == "NN")
     {
         if (useColors)
         {
@@ -43,9 +43,13 @@ void ICPOptimizer::setCorrespondenceMethod(CorrMethod method, bool useColors)
             m_corrAlgo = std::make_unique<NearestNeighborSearch>();
         }
     }
-    else if (method == SHOOT)
+    else if (method == "SHOOT")
     {
         m_corrAlgo = std::make_unique<NormalShootCorrespondence>();
+    }
+    else
+    {
+        throw std::runtime_error("Unknown correspondence method: " + method);
     }
 }
 

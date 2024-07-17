@@ -1,14 +1,12 @@
 #pragma once
 
-#include <string> // for basic_string, string
+#include <string>          // for basic_string, string
+#include <unordered_map>   // for unordered_map
+#include <yaml-cpp/yaml.h> // for yaml
 
-/**
- * enum for correspondence method: nearest neighbor or projective
- */
-enum CorrMethod
+struct ConfigItem
 {
-    NN,
-    SHOOT,
+    std::variant<bool *, double *, float *, int *, std::string *> value;
 };
 
 /**
@@ -32,7 +30,7 @@ public:
     // Whether to use color information.
     bool useColors = false;
     // Correspondence method (NN / SHOOT)
-    CorrMethod correspondenceMethod = NN;
+    std::string correspondenceMethod = "NN";
     // Other settings
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;
@@ -53,4 +51,7 @@ public:
 private:
     void _loadFromYaml(const std::string &filename);
     void _sanityCheck();
+    void _setConfig(std::unordered_map<std::string, ConfigItem> &configMap,
+                    YAML::Node config);
+    void _showConfig(std::unordered_map<std::string, ConfigItem> &configMap);
 };
