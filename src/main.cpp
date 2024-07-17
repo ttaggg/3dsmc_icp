@@ -1,8 +1,8 @@
-#include <stddef.h>			  // for size_t
 #include <iostream>			  // for char_traits
 #include <memory>			  // for unique_ptr
 #include <random>			  // for mt19937
 #include <string>			  // for basic_string
+#include <filesystem>		  // for filesystem paths
 #include "DataLoader.h"		  // for DataLoader
 #include "Eigen.h"			  // for vector
 #include "Evaluator.h"		  // for Evaluator
@@ -15,89 +15,102 @@
 
 namespace fs = std::filesystem;
 
-int runShapeICP(const ICPConfiguration &config)
+void prepareOutputDirectories(const fs::path &baseDir,
+							  const std::string &experimentName,
+							  const std::string &meshName,
+							  fs::path &outputDir,
+							  fs::path &filenameOutputColor,
+							  fs::path &filenameOutputRG)
 {
-	// Reproducibility
-	std::mt19937 rng(42);
+	outputDir = baseDir / experimentName / meshName;
+	fs::create_directories(outputDir);
+	filenameOutputColor = outputDir / "mesh_joined_color.off";
+	filenameOutputRG = outputDir / "mesh_joined_rg.off";
+}
 
-	// Load the path to meshes.
-	auto dataloader = createDataloader(config.dataDir);
-	dataloader->loadMeshPaths(config.dataDir);
+bool needsEvaluation(const ICPConfiguration &config)
+{
+	return config.evaluateTime ||
+		   config.evaluateTransforms ||
+		   config.evaluateRMSENaive ||
+		   config.evaluateRMSENearest ||
+		   config.evaluateRMSENearestPlane;
+}
 
-	ICPOptimizer *optimizer = createOptimizer(config);
-
-	Evaluator evaluator(config);
-	bool evaluate = (config.evaluateTime ||
-					 config.evaluateTransforms ||
-					 config.evaluateRMSENaive ||
-					 config.evaluateRMSENearest ||
-					 config.evaluateRMSENearestPlane);
-	if (evaluate)
+void setupOptimizerAndEvaluator(const ICPConfiguration &config, std::unique_ptr<ICPOptimizer> &optimizer, Evaluator &evaluator)
+{
+	optimizer = std::unique_ptr<ICPOptimizer>(createOptimizer(config));
+	if (needsEvaluation(config))
 	{
 		optimizer->setEvaluator(&evaluator);
 	}
+}
 
-	Matrix4f gtTransform;	// True value of the transformation.
-	SimpleMesh sourceMesh;	// Loaded mesh.
-	SimpleMesh targetMesh;	// Mesh transformed by a random transformation.
-	Matrix4f estimatedPose; // Estimated transformation;
+int runShapeICP(const ICPConfiguration &config)
+{
+	// Reproducibility for random tranformations.
+	std::mt19937 rng(42);
 
-	fs::path outputDir;
-	fs::path filenameOutputColor; // Where to write output.
-	fs::path filenameOutputRG;	  // Where to write output.
+	// Load paths to meshes.
+	auto dataloader = createDataloader(config.dataDir);
+	dataloader->loadMeshPaths(config.dataDir);
 
+	// Setup optimizer and evaluator.
+	std::unique_ptr<ICPOptimizer> optimizer;
+	Evaluator evaluator(config);
+	setupOptimizerAndEvaluator(config, optimizer, evaluator);
+
+	// Iterate through the dataloader.
+	fs::path outputDir, filenameOutputColor, filenameOutputRG;
 	for (size_t i = 0; i < dataloader->size(); ++i)
 	{
-		// Prepare data
-		gtTransform = getRandomTransformation(rng, 45, 0.5);
+		// Prepare data amd output directories.
+		Matrix4f gtTransform = getRandomTransformation(rng, 45, 0.5);
+		SimpleMesh sourceMesh, targetMesh;
 		dataloader->createMeshes(i, sourceMesh, targetMesh, gtTransform);
+		prepareOutputDirectories("../results1", config.experimentName, dataloader->getName(i),
+								 outputDir, filenameOutputColor, filenameOutputRG);
 
-		// Prepare where to write all metrics and meshes.
-		outputDir = "../results" / fs::path{config.experimentName} / fs::path{dataloader->getName(i)};
-		fs::create_directories(outputDir);
-		filenameOutputColor = outputDir / fs::path{"mesh_joined_color.off"};
-		filenameOutputRG = outputDir / fs::path{"mesh_joined_rg.off"};
+		// Run ICP.
+		Matrix4f estimatedPose = alignShapes(sourceMesh,
+											 targetMesh,
+											 gtTransform,
+											 optimizer.get());
 
-		// Estimate pose.
-		estimatedPose = alignShapes(sourceMesh,
-									targetMesh,
-									gtTransform,
-									optimizer);
-
+		// Write meshes.
 		if (config.writeMeshes)
-			// Write down meshes.
 			writeShapeMesh(sourceMesh,
 						   targetMesh,
 						   estimatedPose,
 						   filenameOutputColor,
 						   filenameOutputRG);
 
-		// Write down metrics.
-		evaluator.write(outputDir);
-		evaluator.reset();
+		// Write metrics.
+		if (needsEvaluation(config))
+		{
+			evaluator.write(outputDir);
+			evaluator.reset();
+		}
 
+		// Show mesh in open3D.
 		if (config.visualize)
 			visualize(filenameOutputRG);
 	}
-
-	delete optimizer;
-
 	return 0;
 }
 
 int runSequenceICP(const ICPConfiguration &config)
 {
 
-	// Load video
-	std::cout << "Initialize virtual sensor..." << std::endl;
+	// Load data
 	VirtualSensor sensor;
 	if (!sensor.init(config.dataDir))
 	{
-		std::cout << "Failed to initialize the sensor!\nCheck file path!" << std::endl;
+		std::cerr << "Failed to initialize the sensor!\nCheck file path!" << std::endl;
 		return -1;
 	}
 
-	// We store a first frame as a reference frame. All next frames are tracked relatively to the first frame.
+	// Reference frame.
 	sensor.processNextFrame();
 	PointCloud target{
 		sensor.getDepth(),
@@ -105,73 +118,56 @@ int runSequenceICP(const ICPConfiguration &config)
 		sensor.getDepthExtrinsics(),
 		sensor.getDepthImageWidth(),
 		sensor.getDepthImageHeight(),
-		sensor.getColorRGBX(),
-	};
+		sensor.getColorRGBX()};
 
-	// Setup the optimizer.
-	ICPOptimizer *optimizer = createOptimizer(config);
-
+	// Setup optimizer and evaluator.
+	std::unique_ptr<ICPOptimizer> optimizer;
 	Evaluator evaluator(config);
-	bool evaluate = (config.evaluateTime ||
-					 config.evaluateTransforms ||
-					 config.evaluateRMSENaive ||
-					 config.evaluateRMSENearest ||
-					 config.evaluateRMSENearestPlane);
-	if (evaluate)
-	{
-		optimizer->setEvaluator(&evaluator);
-	}
+	setupOptimizerAndEvaluator(config, optimizer, evaluator);
 
-	fs::path outputDir = "../results " / fs::path{config.experimentName};
+	// Prepare output directory.
+	fs::path outputDir = fs::path{"../results1"} / config.experimentName;
 	fs::create_directories(outputDir);
 
-	// We store the estimated camera poses.
+	// Iterate through the data.
 	Matrix4f currentCameraToWorld = Matrix4f::Identity();
 	Matrix4f initTrajectory = sensor.getTrajectory();
-	Matrix4f groundTruth;
-	Matrix4f currentTrajectory;
-
 	int i = 0;
 	const int iMax = 30;
 	while (sensor.processNextFrame() && i <= iMax)
 	{
-		float *depthMap = sensor.getDepth();
-		Matrix3f depthIntrinsics = sensor.getDepthIntrinsics();
-		Matrix4f depthExtrinsics = sensor.getDepthExtrinsics();
+		PointCloud source{
+			sensor.getDepth(),
+			sensor.getDepthIntrinsics(),
+			sensor.getDepthExtrinsics(),
+			sensor.getDepthImageWidth(),
+			sensor.getDepthImageHeight(),
+			sensor.getColorRGBX(),
+			8};
 
-		// Estimate the current camera pose from source to target mesh with ICP optimization.
-		// We downsample the source image to speed up the correspondence matching.
-		PointCloud source{sensor.getDepth(),
-						  sensor.getDepthIntrinsics(),
-						  sensor.getDepthExtrinsics(),
-						  sensor.getDepthImageWidth(),
-						  sensor.getDepthImageHeight(),
-						  sensor.getColorRGBX(),
-						  8};
+		// Run ICP.
+		Matrix4f currentTrajectory = sensor.getTrajectory();
+		Matrix4f groundTruth = (initTrajectory * currentTrajectory.inverse());
+		optimizer->estimatePose(source, target, currentCameraToWorld, groundTruth);
 
-		currentTrajectory = sensor.getTrajectory();
-		groundTruth = (initTrajectory * currentTrajectory.inverse());
-		optimizer->estimatePose(source,
-								target,
-								currentCameraToWorld,
-								groundTruth);
-
-		evaluator.write(outputDir / fs::path{std::to_string(sensor.getCurrentFrameCnt())});
-		evaluator.reset();
-
-		// Invert the transformation matrix to get the current camera pose.
-		Matrix4f currentCameraPose = currentCameraToWorld.inverse();
-		std::cout << "Current camera pose: " << std::endl
-				  << currentCameraPose << std::endl;
-
+		// Write meshes.
 		if (config.writeMeshes && i % 3 == 0)
-			writeRoomMesh(sensor, currentCameraPose, outputDir / fs::path{"meshes"});
+		{
+			Matrix4f currentCameraPose = currentCameraToWorld.inverse();
+			writeRoomMesh(sensor,
+						  currentCameraPose,
+						  outputDir / "meshes");
+		}
 
-		i++;
+		// Write metrics.
+		if (needsEvaluation(config))
+		{
+			evaluator.write(outputDir / std::to_string(sensor.getCurrentFrameCnt()));
+			evaluator.reset();
+		}
+
+		++i;
 	}
-
-	delete optimizer;
-
 	return 0;
 }
 
