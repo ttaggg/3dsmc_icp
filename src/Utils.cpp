@@ -1,6 +1,7 @@
 #include "Utils.h"
 #include <cmath>              // for M_PI
 #include <iostream>           // for basic_ostream
+#include <Open3D/Open3D.h>    //
 #include <sstream>            // for basic_ostringst...
 #include <sys/stat.h>         //
 #include <sys/types.h>        //
@@ -13,10 +14,6 @@
 #include "VirtualSensor.h"    // for VirtualSensor
 #include "Eigen.h"
 
-#ifdef OPEN3D_ENABLED
-#include <Open3D/Open3D.h>
-#endif
-
 namespace fs = std::filesystem;
 
 bool containsSubstring(const std::string &str, const std::string &substring)
@@ -24,8 +21,6 @@ bool containsSubstring(const std::string &str, const std::string &substring)
     return str.find(substring) != std::string::npos;
 }
 
-#define OPEN3D_ENABLED
-#ifdef OPEN3D_ENABLED
 void visualize(std::string filenameOutput)
 {
 
@@ -45,7 +40,6 @@ void visualize(std::string filenameOutput)
 
     open3d::visualization::DrawGeometries({mesh}, "Mesh Visualization");
 }
-#endif
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,

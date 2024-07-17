@@ -6,6 +6,7 @@ useLinearICP: true
 usePointToPlane: true
 # Correspondence method (NN / SHOOT)
 correspondenceMethod: NN
+useColors: false
 # Other settings
 matchingMaxDistance: 1
 nbOfIterations: 20
@@ -16,5 +17,7 @@ evaluateRMSENearestPlane: true
 evaluateTransforms: true
 evaluateTime: true
 
-experimentName: plane_linear_nn_partial
-dataDir: ../../Data/greyc_partial/
+visualize: true
+writeMeshes: true
+experimentName: plane_linear_nn
+dataDir: ../../Data/greyc_debug/

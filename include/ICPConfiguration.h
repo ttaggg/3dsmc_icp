@@ -37,6 +37,7 @@ public:
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;
     bool visualize = false;
+    bool writeMeshes = false;
     bool evaluateRMSENaive = false;
     bool evaluateRMSENearest = false;
     bool evaluateRMSENearestPlane = false;

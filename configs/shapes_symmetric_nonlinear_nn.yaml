@@ -6,10 +6,10 @@ useLinearICP: false
 useSymmetric: true
 # Correspondence method (NN / SHOOT)
 correspondenceMethod: NN
+useColors: true
 # Other settings
-matchingMaxDistance: 1
+matchingMaxDistance: 5
 nbOfIterations: 20
-visualize: false
 
 evaluateRMSENaive: true # doesn't make sense for partial
 evaluateRMSENearest: true
@@ -17,5 +17,7 @@ evaluateRMSENearestPlane: true
 evaluateTransforms: true
 evaluateTime: true
 
-experimentName: symmetric_nonlinear_nn_partial
+visualize: true
+writeMeshes: true
+experimentName: symmetric_nonlinear_nn
 dataDir: ../../Data/greyc_partial/

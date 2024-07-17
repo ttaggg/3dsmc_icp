@@ -91,6 +91,11 @@ void ICPConfiguration::_loadFromYaml(const std::string &filename)
         visualize = config["visualize"].as<bool>();
     }
 
+    if (config["writeMeshes"])
+    {
+        writeMeshes = config["writeMeshes"].as<bool>();
+    }
+
     if (config["evaluateRMSENaive"])
     {
         evaluateRMSENaive = config["evaluateRMSENaive"].as<bool>();
@@ -198,6 +203,7 @@ void ICPConfiguration::show()
 
     std::cout << "Experiment name: " << experimentName << std::endl;
     std::cout << "Visualization: " << visualize << std::endl;
+    std::cout << "Write meshes: " << writeMeshes << std::endl;
     std::cout << "Evaluate RMSE naive: " << evaluateRMSENaive << std::endl;
     std::cout << "Evaluate RMSE NN: " << evaluateRMSENearest << std::endl;
     std::cout << "Evaluate RMSE Plane: " << evaluateRMSENearestPlane << std::endl;

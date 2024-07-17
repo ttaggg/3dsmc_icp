@@ -15,5 +15,6 @@ evaluateRMSENearest: true
 evaluateTransforms: true
 evaluateTime: true
 
+writeMeshes: true
 experimentName: sequence_symmetric_linear_nn_colors
 dataDir: ../../Data/rgbd_dataset_freiburg1_xyz/

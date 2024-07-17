@@ -14,5 +14,6 @@ evaluateRMSENearest: true
 evaluateTransforms: true
 evaluateTime: true
 
+writeMeshes: true
 experimentName: sequence_symmetric_linear_shot
 dataDir: ../../Data/rgbd_dataset_freiburg1_xyz/

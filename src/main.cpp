@@ -15,9 +15,6 @@
 
 namespace fs = std::filesystem;
 
-#define OPEN3D_ENABLED
-#define MESH_ENABLED
-
 int runShapeICP(const ICPConfiguration &config)
 {
 	// Reproducibility
@@ -66,23 +63,21 @@ int runShapeICP(const ICPConfiguration &config)
 									targetMesh,
 									gtTransform,
 									optimizer);
-		// Write down meshes.
-		writeShapeMesh(sourceMesh,
-					   targetMesh,
-					   estimatedPose,
-					   filenameOutputColor,
-					   filenameOutputRG);
+
+		if (config.writeMeshes)
+			// Write down meshes.
+			writeShapeMesh(sourceMesh,
+						   targetMesh,
+						   estimatedPose,
+						   filenameOutputColor,
+						   filenameOutputRG);
 
 		// Write down metrics.
 		evaluator.write(outputDir);
 		evaluator.reset();
 
-#ifdef OPEN3D_ENABLED
 		if (config.visualize)
-		{
 			visualize(filenameOutputRG);
-		}
-#endif
 	}
 
 	delete optimizer;
@@ -169,10 +164,9 @@ int runSequenceICP(const ICPConfiguration &config)
 		std::cout << "Current camera pose: " << std::endl
 				  << currentCameraPose << std::endl;
 
-#ifdef MESH_ENABLED
-		if (i % 3 == 0)
+		if (config.writeMeshes && i % 3 == 0)
 			writeRoomMesh(sensor, currentCameraPose, outputDir / fs::path{"meshes"});
-#endif
+
 		i++;
 	}
 
