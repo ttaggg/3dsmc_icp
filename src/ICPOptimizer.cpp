@@ -154,6 +154,10 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
 
     for (int i = 0; i < m_nIterations; ++i)
     {
+        std::cout << "======================" << std::endl;
+        std::cout << "Starting iteration: " << i + 1 << std::endl;
+        std::cout << std::endl;
+
         // Compute the matches.
         clock_t beginMatch = clock();
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
@@ -166,7 +170,6 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
 
         clock_t endMatch = clock();
         double elapsedSecsMatch = double(endMatch - beginMatch) / CLOCKS_PER_SEC;
-        std::cout << "Completed in " << elapsedSecsMatch << " seconds." << std::endl;
 
         // Prepare point-to-point and point-to-plane constraints.
         ceres::Problem problem;
@@ -186,8 +189,10 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         // Run the solver (for one iteration).
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
+
         std::cout << summary.BriefReport() << std::endl;
-        // std::cout << summary.FullReport() << std::endl;
+        std::cout << std::endl;
+
         clock_t endOpti = clock();
         double elapsedSecsOpti = double(endOpti - beginOpti) / CLOCKS_PER_SEC;
 
@@ -204,8 +209,6 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
         estimatedPose = matrix * estimatedPose;
         poseIncrement.setZero();
 
-        std::cout << "Optimization iteration done." << std::endl;
-
         // Calculate Error metric
         if (m_evaluate)
         {
@@ -217,6 +220,9 @@ void CeresICPOptimizer::estimatePose(const PointCloud &source, const PointCloud 
                                   estimatedPose,
                                   groundPose);
         }
+        std::cout << std::endl;
+        std::cout << "Optimization iteration " << i + 1 << " / " << m_nIterations << " is done." << std::endl;
+        std::cout << std::endl;
     }
 
     // Store result
@@ -310,8 +316,11 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
 
     for (int i = 0; i < m_nIterations; ++i)
     {
+        std::cout << "======================" << std::endl;
+        std::cout << "Starting iteration: " << i + 1 << std::endl;
+        std::cout << std::endl;
+
         // Compute the matches.
-        std::cout << "Matching points ..." << std::endl;
         clock_t beginMatch = clock();
 
         auto transformedPoints = transformPoints(source.getPoints(), estimatedPose);
@@ -324,7 +333,6 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
 
         clock_t endMatch = clock();
         double elapsedSecsMatch = double(endMatch - beginMatch) / CLOCKS_PER_SEC;
-        std::cout << "Completed in " << elapsedSecsMatch << " seconds." << std::endl;
 
         std::vector<Vector3f> sourcePoints;
         std::vector<Vector3f> targetPoints;
@@ -367,8 +375,6 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
         clock_t endOpti = clock();
         double elapsedSecsOpti = double(endOpti - beginOpti) / CLOCKS_PER_SEC;
 
-        std::cout << "Optimization iteration done." << std::endl;
-
         // Calculate Error metric
         if (m_evaluate)
         {
@@ -381,6 +387,10 @@ void LinearICPOptimizer::estimatePose(const PointCloud &source, const PointCloud
                 estimatedPose,
                 groundPose);
         }
+
+        std::cout << std::endl;
+        std::cout << "Optimization iteration " << i + 1 << " / " << m_nIterations << " is done." << std::endl;
+        std::cout << std::endl;
     }
 
     // Store result

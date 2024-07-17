@@ -68,9 +68,11 @@ void writeShapeMesh(SimpleMesh &sourceMesh,
 
     SimpleMesh resultingMeshRG = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
     resultingMeshRG.writeMesh(filenameOutputRG);
+    std::cout << "Mesh was written to: " << filenameOutputRG << std::endl;
 
     SimpleMesh resultingMeshColor = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose, true);
     resultingMeshColor.writeMesh(filenameOutputColor);
+    std::cout << "Mesh was written to: " << filenameOutputColor << std::endl;
 }
 
 Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_trans)
@@ -164,7 +166,8 @@ void writeRoomMesh(VirtualSensor &sensor, Matrix4f &currentCameraPose, fs::path 
 
     if (!resultingMesh.writeMesh(outputMeshPath))
     {
-        std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
+        std::cerr << "Failed to write mesh!\nCheck file path!" << std::endl;
         return;
     }
+    std::cout << "Mesh was written to: " << outputMeshPath << std::endl;
 }

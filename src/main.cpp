@@ -68,7 +68,7 @@ int runShapeICP(const ICPConfiguration &config)
 		Matrix4f gtTransform = getRandomTransformation(rng, 45, 0.5);
 		SimpleMesh sourceMesh, targetMesh;
 		dataloader->createMeshes(i, sourceMesh, targetMesh, gtTransform);
-		prepareOutputDirectories("../results1", config.experimentName, dataloader->getName(i),
+		prepareOutputDirectories("../results", config.experimentName, dataloader->getName(i),
 								 outputDir, filenameOutputColor, filenameOutputRG);
 
 		// Run ICP.
@@ -126,7 +126,7 @@ int runSequenceICP(const ICPConfiguration &config)
 	setupOptimizerAndEvaluator(config, optimizer, evaluator);
 
 	// Prepare output directory.
-	fs::path outputDir = fs::path{"../results1"} / config.experimentName;
+	fs::path outputDir = fs::path{"../results"} / config.experimentName;
 	fs::create_directories(outputDir);
 
 	// Iterate through the data.

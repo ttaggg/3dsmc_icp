@@ -76,9 +76,6 @@ bool PartialMeshDataLoader::createMeshes(size_t index,
     std::string sourceMeshPath = fs::path{meshPaths[index]} / fs::path{"1.off"};
     std::string targetMeshPath = fs::path{meshPaths[index]} / fs::path{"2.off"};
 
-    std::cout << sourceMeshPath << std::endl;
-    std::cout << targetMeshPath << std::endl;
-
     sourceMesh.loadMesh(sourceMeshPath);
 
     SimpleMesh tmpMesh;
