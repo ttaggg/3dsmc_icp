@@ -1,1 +1,1 @@
-*.off linguist-generated
+Data/**/*.off linguist-generated=true
