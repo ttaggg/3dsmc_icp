@@ -5,30 +5,32 @@ meshes, differentiated by different experiment name (base_dirs).
 Example directory structure:
 
 icp
-├──plot.py
-└──build
-    ├──symmetric_nonlinear_nn_partial
-    │   ├── dinosaur
-    │   │   ├── mesh_joined.off
-    │   │   ├── rmse_nn_metric.txt
-    │   │   └── time_metric.txt
-    │   ├── dragon
-    │   │   ├── mesh_joined.off
-    │   │   ├── rmse_nn_metric.txt
-    │   │   └── time_metric.txt
-    │   ├── jaguar
-    │   ...
-    └──point_linear_nn_partial
-        ├── dinosaur
-        │   ├── mesh_joined.off
-        │   ├── rmse_nn_metric.txt
-        │   └── time_metric.txt
-        ├── dragon
-        │   ├── mesh_joined.off
-        │   ├── rmse_nn_metric.txt
-        │   └── time_metric.txt
-        ├── jaguar
-        ...
+├──visualize
+│    ├──plot_shape_experiments.py
+│    ...
+└──results
+        ├──symmetric_nonlinear_nn_partial
+        │   ├── dinosaur
+        │   │   ├── mesh_joined.off
+        │   │   ├── rmse_nn_metric.txt
+        │   │   └── time_metric.txt
+        │   ├── dragon
+        │   │   ├── mesh_joined.off
+        │   │   ├── rmse_nn_metric.txt
+        │   │   └── time_metric.txt
+        │   ├── jaguar
+        │   ...
+        └──point_linear_nn_partial
+            ├── dinosaur
+            │   ├── mesh_joined.off
+            │   ├── rmse_nn_metric.txt
+            │   └── time_metric.txt
+            ├── dragon
+            │   ├── mesh_joined.off
+            │   ├── rmse_nn_metric.txt
+            │   └── time_metric.txt
+            ├── jaguar
+            ...
 """
 
 import os
@@ -36,11 +38,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Ignore these metrics
-_IGNORE = ["rmse_naive_metric", "time_metric"]
-
 # List of base directories
-base_dirs = ["build/symmetric_nonlinear_nn_partial", "build/point_linear_nn_partial"]
+_BASE_DIRS = ["../results/linear_plane_nn_color", 
+             "../results/linear_point_nn_color", 
+             "../results/linear_symm_nn_color"]
+
+# Ignore these metrics and meshes
+_IGNORE_METRICS = []
+_IGNORE_MESHES = []
 
 # Aliases
 _MAP_NAMES = {
@@ -62,10 +67,12 @@ def read_metric_file(file_path):
     return df
 
 # Traverse the base directories and read the files
-for base_dir in base_dirs:
+for base_dir in _BASE_DIRS:
     base_dir_name = os.path.basename(base_dir)
     data[base_dir_name] = {}
     for entity in os.listdir(base_dir):
+        if entity in _IGNORE_MESHES:
+            continue
         entity_dir = os.path.join(base_dir, entity)
         if os.path.isdir(entity_dir):
             if entity not in data[base_dir_name]:
@@ -74,7 +81,7 @@ for base_dir in base_dirs:
                 if metric_file.endswith('.txt'):
                     metric_name = metric_file.split('.')[0]
                     file_path = os.path.join(entity_dir, metric_file)
-                    if metric_name in _IGNORE:
+                    if metric_name in _IGNORE_METRICS:
                         continue
                     if metric_name not in data[base_dir_name][entity]:
                         data[base_dir_name][entity][metric_name] = []
