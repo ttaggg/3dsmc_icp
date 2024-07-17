@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 
-project(3dsmc_icp)
+project(icp)
 
 # Options
 set(LIBRARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../Libs CACHE PATH "Path to lib folder")
@@ -70,29 +70,29 @@ set(SOURCE_FILES
     src/Evaluator.cpp
 )
 
-add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen yaml-cpp)
-#target_link_libraries(3dsmc_icp ceres freeimage Eigen3::Eigen  Open3D::Open3D)
-target_include_directories(3dsmc_icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${YAML_CPP_DIR})
+add_executable(icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(icp ceres freeimage Eigen3::Eigen yaml-cpp)
+#target_link_libraries(icp ceres freeimage Eigen3::Eigen  Open3D::Open3D)
+target_include_directories(icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${YAML_CPP_DIR})
 
 # On Windows copy dll to executable folder
 if(WIN32)
     # Visual Studio properties
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT 3dsmc_icp)
-    set_property(TARGET 3dsmc_icp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT icp)
+    set_property(TARGET icp PROPERTY VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/)
 
     # On Windows copy dll to executable folder
-    add_custom_command(TARGET 3dsmc_icp POST_BUILD
+    add_custom_command(TARGET icp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${FreeImage_LIBRARY_DIR}/FreeImage.dll"
             ${CMAKE_BINARY_DIR})
     
-    add_custom_command(TARGET 3dsmc_icp POST_BUILD        
+    add_custom_command(TARGET icp POST_BUILD        
         COMMAND ${CMAKE_COMMAND} -E copy_if_different          
             "${GLOG_DLL_PATH_DEBUG}"                           
             ${CMAKE_BINARY_DIR})                     
     
-    add_custom_command(TARGET 3dsmc_icp POST_BUILD
+    add_custom_command(TARGET icp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${GLOG_DLL_PATH_RELEASE}"
             ${CMAKE_BINARY_DIR})

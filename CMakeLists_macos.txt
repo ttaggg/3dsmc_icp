@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.6)
 
 set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
 
-project(3dsmc_icp)
+project(icp)
 
 set(Flann_INCLUDE_DIR /opt/homebrew/Cellar/flann/1.9.2_1)
 include_directories(${Flann_INCLUDE_DIR}/include/)
@@ -36,11 +36,7 @@ add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 include_directories(include)
 include_directories(external/data_utils)
 
-set(HEADER_FILES 
-    external/data_utils/Eigen.h
-    external/data_utils/SimpleMesh.h
-    external/data_utils/PointCloud.h
-    external/data_utils/VirtualSensor.h
+set(HEADER_FILES
     include/Search.h
     include/ProcrustesAligner.h
     include/ICPOptimizer.h
@@ -48,11 +44,14 @@ set(HEADER_FILES
     include/DataLoader.h
     include/Utils.h
     include/Evaluator.h
+    external/data_utils/Eigen.h
+    external/data_utils/SimpleMesh.h
+    external/data_utils/PointCloud.h
+    external/data_utils/VirtualSensor.h
     external/data_utils/FreeImageHelper.h
 )
 
-set(SOURCE_FILES 
-    external/data_utils/FreeImageHelper.cpp
+set(SOURCE_FILES
     src/Search.cpp
     src/ProcrustesAligner.cpp
     src/ICPOptimizer.cpp
@@ -60,8 +59,10 @@ set(SOURCE_FILES
     src/DataLoader.cpp
     src/Utils.cpp
     src/Evaluator.cpp
+    external/data_utils/FreeImageHelper.cpp
 )
 
-add_executable(3dsmc_icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(3dsmc_icp ceres freeimage flann Eigen3::Eigen lz4 Open3D::Open3D yaml-cpp)
-target_include_directories(3dsmc_icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR}, ${YAML_CPP_DIR})
+
+add_executable(icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(icp ceres freeimage flann Eigen3::Eigen lz4 Open3D::Open3D yaml-cpp)
+target_include_directories(icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR}, ${YAML_CPP_DIR})
