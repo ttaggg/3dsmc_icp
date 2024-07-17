@@ -25,8 +25,13 @@ void visualize(std::string filenameOutput);
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
                      Matrix4f &gtTransform,
-                     ICPOptimizer *optimizer,
-                     std::string filenameOutput);
+                     ICPOptimizer *optimizer);
+
+void writeShapeMesh(SimpleMesh &sourceMesh,
+                    SimpleMesh &targetMesh,
+                    Matrix4f &estimatedPose,
+                    std::string filenameOutputColor,
+                    std::string filenameOutputRG);
 
 Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_trans);
 

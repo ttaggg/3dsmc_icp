@@ -46,7 +46,8 @@ int runShapeICP(const ICPConfiguration &config)
 	Matrix4f estimatedPose; // Estimated transformation;
 
 	fs::path outputDir;
-	fs::path filenameOutput; // Where to write output.
+	fs::path filenameOutputColor; // Where to write output.
+	fs::path filenameOutputRG;	  // Where to write output.
 
 	for (size_t i = 0; i < dataloader->size(); ++i)
 	{
@@ -57,14 +58,21 @@ int runShapeICP(const ICPConfiguration &config)
 		// Prepare where to write all metrics and meshes.
 		outputDir = "../results" / fs::path{config.experimentName} / fs::path{dataloader->getName(i)};
 		fs::create_directories(outputDir);
-		filenameOutput = outputDir / fs::path{"mesh_joined.off"};
+		filenameOutputColor = outputDir / fs::path{"mesh_joined_color.off"};
+		filenameOutputRG = outputDir / fs::path{"mesh_joined_rg.off"};
 
 		// Estimate pose.
 		estimatedPose = alignShapes(sourceMesh,
 									targetMesh,
 									gtTransform,
-									optimizer,
-									filenameOutput);
+									optimizer);
+		// Write down meshes.
+		writeShapeMesh(sourceMesh,
+					   targetMesh,
+					   estimatedPose,
+					   filenameOutputColor,
+					   filenameOutputRG);
+
 		// Write down metrics.
 		evaluator.write(outputDir);
 		evaluator.reset();
@@ -72,7 +80,7 @@ int runShapeICP(const ICPConfiguration &config)
 #ifdef OPEN3D_ENABLED
 		if (config.visualize)
 		{
-			visualize(filenameOutput);
+			visualize(filenameOutputRG);
 		}
 #endif
 	}

@@ -50,8 +50,7 @@ void visualize(std::string filenameOutput)
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
                      Matrix4f &gtTransform,
-                     ICPOptimizer *optimizer,
-                     std::string filenameOutput)
+                     ICPOptimizer *optimizer)
 {
 
     PointCloud source{sourceMesh};
@@ -60,12 +59,24 @@ Matrix4f alignShapes(SimpleMesh &sourceMesh,
     Matrix4f estimatedPose = Matrix4f::Identity();
     optimizer->estimatePose(source, target, estimatedPose, gtTransform);
 
-    // Visualize the resulting joined mesh. We add triangulated spheres for point matches.
-    SimpleMesh resultingMesh = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
-    resultingMesh.writeMesh(filenameOutput);
-    std::cout << "Resulting mesh written." << std::endl;
-
     return estimatedPose;
+}
+
+void writeShapeMesh(SimpleMesh &sourceMesh,
+                    SimpleMesh &targetMesh,
+                    Matrix4f &estimatedPose,
+                    std::string filenameOutputColor,
+                    std::string filenameOutputRG)
+{
+
+    PointCloud source{sourceMesh};
+    PointCloud target{targetMesh};
+
+    SimpleMesh resultingMeshRG = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose);
+    resultingMeshRG.writeMesh(filenameOutputRG);
+
+    SimpleMesh resultingMeshColor = SimpleMesh::joinMeshes(sourceMesh, targetMesh, estimatedPose, true);
+    resultingMeshColor.writeMesh(filenameOutputColor);
 }
 
 Matrix4f getRandomTransformation(std::mt19937 &rng, float lim_angle, float lim_trans)
