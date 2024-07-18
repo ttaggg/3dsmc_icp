@@ -66,3 +66,23 @@ dataDir: ../../Data/greyc_partial/       # Output directory
         ├──greyc_partial_debug
         └──rgbd_dataset_freiburg1_xyz
     └──Libs
+
+
+## Docker
+
+If you want to use Docker, use the following command to create a Docker image and install and compile the required dependencies.
+
+```bash
+docker build . -t 3dsmc-icp
+```
+
+### Start the development environment
+
+```bash
+docker-compose up
+```
+
+### Access the environment
+
+Please access here: http://localhost:8443/
+Then clone this repository into the Docker image.
