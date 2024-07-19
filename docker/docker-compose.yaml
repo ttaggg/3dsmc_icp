@@ -1,0 +1,19 @@
+---
+version: "1.0"
+services:
+  code-server:
+    image: 3dsmc-icp
+    container_name: 3dsmc-icp
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - PASSWORD=password # please change the PASSWORD
+      - SUDO_PASSWORD=password # please change same PASSWORD
+      - DEFAULT_WORKSPACE=/config/workspace # optional
+    volumes:
+      - ./app/config:/config
+      - ./files:/config/workspace
+    ports:
+      - 8443:8443
+    restart: unless-stopped
