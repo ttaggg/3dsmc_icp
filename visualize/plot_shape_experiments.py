@@ -5,30 +5,32 @@ meshes, differentiated by different experiment name (base_dirs).
 Example directory structure:
 
 icp
-├──plot.py
-└──build
-    ├──symmetric_nonlinear_nn_partial
-    │   ├── dinosaur
-    │   │   ├── mesh_joined.off
-    │   │   ├── rmse_nn_metric.txt
-    │   │   └── time_metric.txt
-    │   ├── dragon
-    │   │   ├── mesh_joined.off
-    │   │   ├── rmse_nn_metric.txt
-    │   │   └── time_metric.txt
-    │   ├── jaguar
-    │   ...
-    └──point_linear_nn_partial
-        ├── dinosaur
-        │   ├── mesh_joined.off
-        │   ├── rmse_nn_metric.txt
-        │   └── time_metric.txt
-        ├── dragon
-        │   ├── mesh_joined.off
-        │   ├── rmse_nn_metric.txt
-        │   └── time_metric.txt
-        ├── jaguar
-        ...
+├──visualize
+│    ├──plot_shape_experiments.py
+│    ...
+└──results
+        ├──symmetric_nonlinear_nn_partial
+        │   ├── dinosaur
+        │   │   ├── mesh_joined.off
+        │   │   ├── rmse_nn_metric.txt
+        │   │   └── time_metric.txt
+        │   ├── dragon
+        │   │   ├── mesh_joined.off
+        │   │   ├── rmse_nn_metric.txt
+        │   │   └── time_metric.txt
+        │   ├── jaguar
+        │   ...
+        └──point_linear_nn_partial
+            ├── dinosaur
+            │   ├── mesh_joined.off
+            │   ├── rmse_nn_metric.txt
+            │   └── time_metric.txt
+            ├── dragon
+            │   ├── mesh_joined.off
+            │   ├── rmse_nn_metric.txt
+            │   └── time_metric.txt
+            ├── jaguar
+            ...
 """
 
 import os
@@ -36,11 +38,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Ignore these metrics
-_IGNORE = ["rmse_naive_metric", "time_metric"]
-
 # List of base directories
-base_dirs = ["build/symmetric_nonlinear_nn_partial", "build/point_linear_nn_partial"]
+_BASE_DIRS = ["../results/linear_plane_nn_color", 
+             "../results/linear_point_nn_color", 
+             "../results/linear_symm_nn_color"]
+
+_BASE_NAME_MAP = {
+   "linear_point_nn_color": "Point-to-Point ICP",
+   "linear_plane_nn_color": "Point-to-Plane ICP",
+   "linear_symm_nn_color": "Symmetric ICP",
+}
+
+# Ignore these metrics and meshes
+_IGNORE_METRICS = []
+_IGNORE_MESHES = []
 
 # Aliases
 _MAP_NAMES = {
@@ -62,10 +73,12 @@ def read_metric_file(file_path):
     return df
 
 # Traverse the base directories and read the files
-for base_dir in base_dirs:
+for base_dir in _BASE_DIRS:
     base_dir_name = os.path.basename(base_dir)
     data[base_dir_name] = {}
     for entity in os.listdir(base_dir):
+        if entity in _IGNORE_MESHES:
+            continue
         entity_dir = os.path.join(base_dir, entity)
         if os.path.isdir(entity_dir):
             if entity not in data[base_dir_name]:
@@ -74,7 +87,7 @@ for base_dir in base_dirs:
                 if metric_file.endswith('.txt'):
                     metric_name = metric_file.split('.')[0]
                     file_path = os.path.join(entity_dir, metric_file)
-                    if metric_name in _IGNORE:
+                    if metric_name in _IGNORE_METRICS:
                         continue
                     if metric_name not in data[base_dir_name][entity]:
                         data[base_dir_name][entity][metric_name] = []
@@ -105,15 +118,22 @@ for base_dir_name in data.keys():
             averaged_metrics_per_base_dir[base_dir_name][metric_type] = multi_index_df[metric_columns].mean(axis=1)
             std_metrics_per_base_dir[base_dir_name][metric_type] = multi_index_df[metric_columns].std(axis=1)
 
+
 # Plot averaged metrics with standard deviation for each base directory
 sns.set_theme(style="whitegrid")
 for metric_type in metric_types:
+    plt.rc('axes', titlesize=20)     # fontsize of the axes title
+    plt.rc('axes', labelsize=20)     # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=14)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=14)    # fontsize of the tick labels
+    plt.rc('legend', fontsize=20)    # legend fontsize
+
     plt.figure(figsize=(12, 8))
     for base_dir_name, metrics in averaged_metrics_per_base_dir.items():
         if metric_type in metrics:
             mean_values = metrics[metric_type]
             std_values = std_metrics_per_base_dir[base_dir_name][metric_type]
-            plt.plot(mean_values.index, mean_values, label=f'{base_dir_name} Mean')
+            plt.plot(mean_values.index, mean_values, label=f'{_BASE_NAME_MAP[base_dir_name]} Mean')
             plt.fill_between(mean_values.index, mean_values - std_values, mean_values + std_values, alpha=0.2)
     plt.title(f'{_MAP_NAMES[metric_type]} averaged across all meshes')
     plt.xlabel('Iteration')

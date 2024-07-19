@@ -386,7 +386,7 @@ public:
 			}
 			else
 			{
-				v.color = Vector4uc(0, 255, 0, 0);
+				v.color = Vector4uc(0, 255, 0, 255);
 			}
 			joinedVertices.push_back(v);
 		}
@@ -401,7 +401,7 @@ public:
 			}
 			else
 			{
-				v.color = Vector4uc(255, 0, 0, 0);
+				v.color = Vector4uc(255, 0, 0, 255);
 			}
 			joinedVertices.push_back(v);
 		}

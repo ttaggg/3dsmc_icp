@@ -15,5 +15,6 @@ evaluateRMSENearest: true
 evaluateTransforms: true
 evaluateTime: true
 
+writeMeshes: true
 experimentName: room_symmetric_nonlinear_nn
 dataDir: ../../Data/rgbd_dataset_freiburg1_xyz/

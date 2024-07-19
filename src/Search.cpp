@@ -43,8 +43,6 @@ void NearestNeighborSearch::buildIndex(const std::vector<Vector3f> &targetPoints
                                        const std::vector<Vector3f> *targetColors,
                                        const std::vector<Vector3f> *targetNormals)
 {
-    std::cout << "Initializing FLANN index with " << targetPoints.size() << " points." << std::endl;
-
     // FLANN requires that all the points be flat. Therefore we copy the points to a separate flat array.
     m_flatPoints = new float[targetPoints.size() * 3];
     for (size_t pointIndex = 0; pointIndex < targetPoints.size(); pointIndex++)
@@ -60,8 +58,6 @@ void NearestNeighborSearch::buildIndex(const std::vector<Vector3f> &targetPoints
     // Building the index takes some time.
     m_index = new flann::Index<flann::L2<float>>(dataset, flann::KDTreeIndexParams(m_nTrees));
     m_index->buildIndex();
-
-    std::cout << "FLANN index created." << std::endl;
 }
 
 std::vector<Match> NearestNeighborSearch::queryMatches(const std::vector<Vector3f> &transformedPoints,
@@ -147,7 +143,6 @@ void NearestNeighborSearchWithColors::_buildIndex(const std::vector<Vector3f> &t
                                                   const std::vector<Vector3f> &targetColors,
                                                   const std::vector<Vector3f> &targetNormals)
 {
-
     // Assuming targetColors.size() == targetPoints.size()
     m_flatPoints = new float[targetPoints.size() * 6];
     for (size_t pointIndex = 0; pointIndex < targetPoints.size(); ++pointIndex)
@@ -162,7 +157,6 @@ void NearestNeighborSearchWithColors::_buildIndex(const std::vector<Vector3f> &t
     flann::Matrix<float> dataset(m_flatPoints, targetPoints.size(), 6);
     m_index = new flann::Index<flann::L2<float>>(dataset, flann::KDTreeIndexParams(m_nTrees));
     m_index->buildIndex();
-    std::cout << "FLANN index with color created." << std::endl;
 }
 
 std::vector<Match> NearestNeighborSearchWithColors::queryMatches(const std::vector<Vector3f> &transformedPoints,
@@ -176,6 +170,11 @@ std::vector<Match> NearestNeighborSearchWithColors::_queryMatches(const std::vec
                                                                   const std::vector<Vector3f> &transformedColors,
                                                                   const std::vector<Vector3f> &transformedNormals)
 {
+    if (!m_index)
+    {
+        std::cout << "FLANN index needs to be built before querying any matches." << std::endl;
+        return {};
+    }
     // Assuming transformedColors.size() == transformedPoints.size()
     float *queryPoints = new float[transformedPoints.size() * 6];
     for (size_t pointIndex = 0; pointIndex < transformedPoints.size(); ++pointIndex)
@@ -247,8 +246,6 @@ void NormalShootCorrespondence::_buildIndex(const std::vector<Vector3f> &targetP
                                             const std::vector<Vector3f> &targetColors,
                                             const std::vector<Vector3f> &targetNormals)
 {
-    std::cout << "Initializing FLANN index with " << targetPoints.size() << " points." << std::endl;
-
     m_flatPoints = new float[targetPoints.size() * 3];
     for (size_t pointIndex = 0; pointIndex < targetPoints.size(); pointIndex++)
     {
@@ -262,8 +259,6 @@ void NormalShootCorrespondence::_buildIndex(const std::vector<Vector3f> &targetP
 
     m_index = new flann::Index<flann::L2<float>>(dataset, flann::KDTreeIndexParams(m_nTrees));
     m_index->buildIndex();
-
-    std::cout << "FLANN index created." << std::endl;
 }
 
 std::vector<Match> NormalShootCorrespondence::queryMatches(const std::vector<Vector3f> &transformedPoints,

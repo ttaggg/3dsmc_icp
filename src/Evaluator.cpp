@@ -80,6 +80,9 @@ void Evaluator::_evalTransforms(Matrix4f &transform, Matrix4f &groundTruth)
 
     translationMetric.push_back(translation_rmse);
     rotationMetric.push_back(rotation_frobenius_norm);
+
+    std::cout << "Translation RMSE: " << translation_rmse << std::endl;
+    std::cout << "Frobenius Norm: " << rotation_frobenius_norm << std::endl;
 }
 
 void Evaluator::_NaiveRMSE(
@@ -102,7 +105,9 @@ void Evaluator::_NaiveRMSE(
         auto pt_trans = (transformation * Vector4f(sp(0), sp(1), sp(2), 1.0)).block<3, 1>(0, 0);
         err += (pt_trans - tp).squaredNorm();
     }
-    rmseNaiveMetric.push_back(std::sqrt(err / (double)source_p.size()));
+    auto rmse = std::sqrt(err / (double)source_p.size());
+    rmseNaiveMetric.push_back(rmse);
+    std::cout << "RMSE Naive: " << rmse << std::endl;
 }
 
 void Evaluator::_PointToPointComputeRMSE(
@@ -136,7 +141,9 @@ void Evaluator::_PointToPointComputeRMSE(
         }
         i++;
     }
-    rmseNearestMetric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
+    auto rmse = std::sqrt(err / (double)(match.size() - unmatched));
+    rmseNearestMetric.push_back(rmse);
+    std::cout << "RMSE NN: " << rmse << std::endl;
 }
 
 void Evaluator::_PointToPlaneComputeRMSE(
@@ -171,7 +178,9 @@ void Evaluator::_PointToPlaneComputeRMSE(
         }
         i++;
     }
-    rmseNearestPlaneMetric.push_back(std::sqrt(err / (double)(match.size() - unmatched)));
+    auto rmse = std::sqrt(err / (double)(match.size() - unmatched));
+    rmseNearestPlaneMetric.push_back(rmse);
+    std::cout << "RMSE NN Plane: " << rmse << std::endl;
 }
 
 void Evaluator::write(fs::path outputDir)

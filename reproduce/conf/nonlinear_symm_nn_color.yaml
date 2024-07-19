@@ -1,23 +1,19 @@
-# Task
-runShapeICP: true
-# ICP type
 useLinearICP: false
-# ICP objective(s)
 useSymmetric: true
-# Correspondence method (NN / SHOOT)
 correspondenceMethod: NN
 useColors: true
-# Other settings
-matchingMaxDistance: 5
-nbOfIterations: 20
+dataDir: ../../Data/greyc/
+experimentName: nonlinear_symm_nn_color
 
+# Other settings
+runShapeICP: true
+matchingMaxDistance: 5
+nbOfIterations: 40
+visualize: false
+writeMeshes: true
 evaluateRMSENaive: true # doesn't make sense for partial
 evaluateRMSENearest: true
 evaluateRMSENearestPlane: true
 evaluateTransforms: true
 evaluateTime: true
 
-visualize: true
-writeMeshes: true
-experimentName: symmetric_nonlinear_nn
-dataDir: ../../Data/greyc_partial/
