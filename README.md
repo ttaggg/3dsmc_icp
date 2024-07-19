@@ -6,7 +6,7 @@
   <img src="assets/dragon_readme.png" width="40%" />
   <img src="assets/dragon_rg_readme.png" width="40%" /> 
 </p>
-<p align="middle">Two non-overlapping dragon meshes aligned by ICP.</p>
+<p align="middle">Two non-overlapping dragon meshes aligned by ICP</p>
 
 ## Introduction
 This is the project for the course 3D Scanning & Motion Capture at Technical University of Munich.
@@ -76,7 +76,7 @@ docker-compose up
 
 #### Access the environment
 
-http://localhost:8443/
+`http://localhost:8443/` \
 Clone this repository into the Docker image.
 
 
@@ -147,20 +147,20 @@ icp
 ├── Dockerfile
 ├── README.md
 ├── src
-│   ├── DataLoader.cpp                                  # Dataloader for GREYC meshes
-│   ├── Evaluator.cpp                                   # Class that 
-│   ├── ICPConfiguration.cpp                            # Class for configuration
+│   ├── DataLoader.cpp                      # Dataloader for GREYC meshes
+│   ├── Evaluator.cpp                       # Class that 
+│   ├── ICPConfiguration.cpp                # Class for configuration
 │   ├── ICPOptimizer.cpp
 │   ├── ProcrustesAligner.cpp
 │   ├── Search.cpp
 │   ├── Utils.cpp
 │   └── main.cpp
 ├── configs
-│   └── ...                                             # Sample configs
+│   └── ...                                 # Sample configs
 ├── docker
 │   ├── Dockerfile
 │   └── docker-compose.yaml
-├── external                                            # Data utils
+├── external                                # Data utils
 │   └── data_utils
 │       ├── Eigen.h
 │       ├── FreeImageHelper.cpp
@@ -168,7 +168,7 @@ icp
 │       ├── PointCloud.h
 │       ├── SimpleMesh.h
 │       └── VirtualSensor.h
-├── include                                             # Headers
+├── include                                 # Headers
 │   ├── Constraints.h
 │   ├── DataLoader.h
 │   ├── Evaluator.h
@@ -177,15 +177,15 @@ icp
 │   ├── ProcrustesAligner.h
 │   ├── Search.h
 │   └── Utils.h
-├── reproduce                                           # Everything you need to reproduce results.
+├── reproduce                                # Everything you need to reproduce results.
 │   ├── conf
 │   │   ├── ...
 │   │   ...
 │   └── ...
-├── visualize                                           # Everything you need for visualization of results.
+├── visualize                                 # Everything you need for visualization of results.
 │   ├── README.md
 │   ├── plot_shape_experiments.py
 │   ├── plot_visualize.py
 │   └── requirements.txt
-└── assets                                              # Images from this README
+└── assets                                    # Images from this README
 ```
