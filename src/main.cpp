@@ -92,9 +92,11 @@ int runShapeICP(const ICPConfiguration &config)
 			evaluator.reset();
 		}
 
+#ifdef OPEN3D_ENABLED
 		// Show mesh in open3D.
 		if (config.visualize)
 			visualize(filenameOutputRG);
+#endif
 	}
 	return 0;
 }

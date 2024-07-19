@@ -70,9 +70,17 @@ set(SOURCE_FILES
     src/Evaluator.cpp
 )
 
+if(Open3D_FOUND)
+    add_definitions(-DOPEN3D_ENABLED)
+    include_directories(${Open3D_INCLUDE_DIRS})
+    link_directories(${Open3D_LIBRARY_DIRS})
+    set(OPEN3D_LIBS ${Open3D_LIBRARIES})
+else()
+    set(OPEN3D_LIBS "")
+endif()
+
 add_executable(icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(icp ceres freeimage Eigen3::Eigen yaml-cpp)
-#target_link_libraries(icp ceres freeimage Eigen3::Eigen  Open3D::Open3D)
+target_link_libraries(icp ceres freeimage Eigen3::Eigen yaml-cpp ${OPEN3D_LIBS})
 target_include_directories(icp PUBLIC ${EIGEN3_INCLUDE_DIR} ${FreeImage_INCLUDE_DIR} ${Flann_INCLUDE_DIR} ${YAML_CPP_DIR})
 
 # On Windows copy dll to executable folder

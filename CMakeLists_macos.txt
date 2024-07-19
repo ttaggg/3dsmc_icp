@@ -63,6 +63,15 @@ set(SOURCE_FILES
 )
 
 
+if(Open3D_FOUND)
+    add_definitions(-DOPEN3D_ENABLED)
+    include_directories(${Open3D_INCLUDE_DIRS})
+    link_directories(${Open3D_LIBRARY_DIRS})
+    set(OPEN3D_LIBS ${Open3D_LIBRARIES})
+else()
+    set(OPEN3D_LIBS "")
+endif()
+
 add_executable(icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(icp ceres freeimage flann Eigen3::Eigen lz4 Open3D::Open3D yaml-cpp)
+target_link_libraries(icp ceres freeimage flann Eigen3::Eigen lz4 ${OPEN3D_LIBS} yaml-cpp)
 target_include_directories(icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR}, ${YAML_CPP_DIR})

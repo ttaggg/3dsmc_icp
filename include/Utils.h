@@ -17,7 +17,9 @@ namespace fs = std::filesystem;
 
 bool containsSubstring(const std::string &str, const std::string &substring);
 
+#ifdef OPEN3D_ENABLED
 void visualize(std::string filenameOutput);
+#endif
 
 Matrix4f alignShapes(SimpleMesh &sourceMesh,
                      SimpleMesh &targetMesh,
