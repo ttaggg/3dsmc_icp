@@ -1,35 +1,69 @@
 cmake_minimum_required(VERSION 3.6)
 
-set(CMAKE_CONFIGURATION_TYPES Debug Release CACHE TYPE INTERNAL FORCE)
+# Set the policy to NEW to avoid deprecation warnings
+if(POLICY CMP0072)
+  cmake_policy(SET CMP0072 NEW)
+endif()
+
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Available build types" FORCE)
 
 project(icp)
-
-set(Flann_INCLUDE_DIR /opt/homebrew/Cellar/flann/1.9.2_1)
-include_directories(${Flann_INCLUDE_DIR}/include/)
-link_directories(${Flann_INCLUDE_DIR}/lib/)
-
-set(FREE_IMAGE_DIR /opt/homebrew/Cellar/freeimage/3.18.0)  
-include_directories(${FREE_IMAGE_DIR}/include/)
-link_directories(${FREE_IMAGE_DIR}/lib/)
-
-set(LZ4_DIR /opt/homebrew/Cellar/lz4/1.9.4)  
-include_directories(${LZ4_DIR}/include/)
-link_directories(${LZ4_DIR}/lib/)
-
-set(YAML_CPP_DIR /opt/homebrew/Cellar/yaml-cpp/0.8.0/)
-include_directories(${YAML_CPP_DIR}/include/)
-link_directories(${YAML_CPP_DIR}/lib/)
 
 # Set C++ flags
 set(CMAKE_CXX_STANDARD 14)
 
+# Open3D
 set(Open3D_DIR $ENV{HOME}/open3d_install/lib/cmake/Open3D/)
 find_package(Open3D REQUIRED)
 
+# Manually find Flann
+find_path(FLANN_INCLUDE_DIR flann/flann.h
+          HINTS /opt/homebrew/Cellar/flann/1.9.2_1/include)
+find_library(FLANN_LIBRARY NAMES flann
+             HINTS /opt/homebrew/Cellar/flann/1.9.2_1/lib)
+
+if(NOT FLANN_INCLUDE_DIR OR NOT FLANN_LIBRARY)
+    message(FATAL_ERROR "Could not find Flann library. Please install it and set the FLANN_INCLUDE_DIR and FLANN_LIBRARY variables.")
+endif()
+
+# Manually find FreeImage
+find_path(FREEIMAGE_INCLUDE_DIR FreeImage.h
+          HINTS /opt/homebrew/Cellar/freeimage/3.18.0/include)
+find_library(FREEIMAGE_LIBRARY NAMES freeimage
+             HINTS /opt/homebrew/Cellar/freeimage/3.18.0/lib)
+
+if(NOT FREEIMAGE_INCLUDE_DIR OR NOT FREEIMAGE_LIBRARY)
+    message(FATAL_ERROR "Could not find FreeImage library. Please install it and set the FREEIMAGE_INCLUDE_DIR and FREEIMAGE_LIBRARY variables.")
+endif()
+
+# Manually find LZ4
+find_path(LZ4_INCLUDE_DIR lz4.h
+          HINTS /opt/homebrew/Cellar/lz4/1.9.4/include)
+find_library(LZ4_LIBRARY NAMES lz4
+             HINTS /opt/homebrew/Cellar/lz4/1.9.4/lib)
+
+if(NOT LZ4_INCLUDE_DIR OR NOT LZ4_LIBRARY)
+    message(FATAL_ERROR "Could not find LZ4 library. Please install it and set the LZ4_INCLUDE_DIR and LZ4_LIBRARY variables.")
+endif()
+
+# Manually find yaml-cpp
+find_path(YAML_CPP_INCLUDE_DIR yaml-cpp/yaml.h
+          HINTS /opt/homebrew/Cellar/yaml-cpp/0.8.0/include)
+find_library(YAML_CPP_LIBRARY NAMES yaml-cpp
+             HINTS /opt/homebrew/Cellar/yaml-cpp/0.8.0/lib)
+
+if(NOT YAML_CPP_INCLUDE_DIR OR NOT YAML_CPP_LIBRARY)
+    message(FATAL_ERROR "Could not find yaml-cpp library. Please install it and set the YAML_CPP_INCLUDE_DIR and YAML_CPP_LIBRARY variables.")
+endif()
+
+# Find other packages
 find_package(Ceres REQUIRED)
-find_package(glog REQUIRED)
-get_target_property(GLOG_DLL_PATH_DEBUG glog::glog IMPORTED_LOCATION_DEBUG)
-get_target_property(GLOG_DLL_PATH_RELEASE glog::glog IMPORTED_LOCATION_RELEASE)
+find_package(Eigen3 REQUIRED)
+
+include_directories(${FLANN_INCLUDE_DIR})
+include_directories(${FREEIMAGE_INCLUDE_DIR})
+include_directories(${LZ4_INCLUDE_DIR})
+include_directories(${YAML_CPP_INCLUDE_DIR})
 
 add_definitions("-D_DISABLE_EXTENDED_ALIGNED_STORAGE")
 
@@ -62,7 +96,6 @@ set(SOURCE_FILES
     external/data_utils/FreeImageHelper.cpp
 )
 
-
 if(Open3D_FOUND)
     add_definitions(-DOPEN3D_ENABLED)
     include_directories(${Open3D_INCLUDE_DIRS})
@@ -73,5 +106,4 @@ else()
 endif()
 
 add_executable(icp src/main.cpp ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(icp ceres freeimage flann Eigen3::Eigen lz4 ${OPEN3D_LIBS} yaml-cpp)
-target_include_directories(icp PUBLIC ${Flann_INCLUDE_DIR} ${LZ4_DIR}, ${YAML_CPP_DIR})
+target_link_libraries(icp ceres ${FREEIMAGE_LIBRARY} ${FLANN_LIBRARY} Eigen3::Eigen ${LZ4_LIBRARY} ${OPEN3D_LIBS} ${YAML_CPP_LIBRARY})
