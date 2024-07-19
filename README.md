@@ -16,6 +16,9 @@ cmake ..
 make
 ```
 
+### Dataset
+Please download dataset in [here](https://syncandshare.lrz.de/getlink/fiUgchGbMDtkDJrsPWbAu9/Data.zip)
+
 ### Run the program
 Simply use the command line with `3dsmc_icp` program:
 
