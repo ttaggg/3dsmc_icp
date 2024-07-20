@@ -1,7 +1,6 @@
 useLinearICP: true
 usePointToPoint: true
-correspondenceMethod: NN
-useColors: true
+correspondenceMethod: NN_COLORS
 dataDir: ../../Data/greyc/
 experimentName: linear_point_nn_color
 

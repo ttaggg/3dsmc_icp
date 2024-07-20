@@ -23,7 +23,7 @@ class ICPOptimizer
 public:
     ICPOptimizer();
     void setMatchingMaxDistance(float maxDistance);
-    void setCorrespondenceMethod(std::string method, bool useColor);
+    void setCorrespondenceMethod(std::string method);
     void usePointToPointConstraints(bool bUsePointToPointConstraints, double weightPointToPointConstraints);
     void usePointToPlaneConstraints(bool bUsePointToPlaneConstraints, double weightPointToPlaneConstraints);
     void useSymmetricConstraints(bool bUseSymmetricConstraints, double weightSymmetricConstraints);

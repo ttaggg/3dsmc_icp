@@ -132,7 +132,7 @@ ICPOptimizer *createOptimizer(const ICPConfiguration &config)
         optimizer = new CeresICPOptimizer();
     }
 
-    optimizer->setCorrespondenceMethod(config.correspondenceMethod, config.useColors);
+    optimizer->setCorrespondenceMethod(config.correspondenceMethod);
     optimizer->setMatchingMaxDistance(config.matchingMaxDistance);
     optimizer->usePointToPointConstraints(config.usePointToPoint, config.weightPointToPoint);
     optimizer->usePointToPlaneConstraints(config.usePointToPlane, config.weightPointToPlane);

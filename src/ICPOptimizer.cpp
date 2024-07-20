@@ -30,22 +30,23 @@ void ICPOptimizer::setEvaluator(Evaluator *evaluator_)
     m_evaluate = true;
 }
 
-void ICPOptimizer::setCorrespondenceMethod(std::string method, bool useColors)
+void ICPOptimizer::setCorrespondenceMethod(std::string method)
 {
     if (method == "NN")
     {
-        if (useColors)
-        {
-            m_corrAlgo = std::make_unique<NearestNeighborSearchWithColors>();
-        }
-        else
-        {
-            m_corrAlgo = std::make_unique<NearestNeighborSearch>();
-        }
+        m_corrAlgo = std::make_unique<NearestNeighborSearch>();
+    }
+    else if (method == "NN_COLORS")
+    {
+        m_corrAlgo = std::make_unique<NearestNeighborSearchWithColors>();
     }
     else if (method == "SHOOT")
     {
         m_corrAlgo = std::make_unique<NormalShootCorrespondence>();
+    }
+    else if (method == "SHOOT_COLORS")
+    {
+        m_corrAlgo = std::make_unique<NormalShootCorrespondenceWithColors>();
     }
     else
     {

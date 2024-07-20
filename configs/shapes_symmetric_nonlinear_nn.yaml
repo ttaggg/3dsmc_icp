@@ -5,8 +5,7 @@ useLinearICP: false
 # ICP objective(s)
 useSymmetric: true
 # Correspondence method (NN / SHOOT)
-correspondenceMethod: NN
-useColors: true
+correspondenceMethod: NN_COLORS
 # Other settings
 matchingMaxDistance: 5
 nbOfIterations: 20

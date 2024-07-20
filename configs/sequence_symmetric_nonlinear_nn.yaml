@@ -6,7 +6,6 @@ useLinearICP: false
 useSymmetric: true
 # Correspondence method (NN / SHOOT)
 correspondenceMethod: NN
-useColors: false
 # Other settings
 matchingMaxDistance: 0.1
 nbOfIterations: 10

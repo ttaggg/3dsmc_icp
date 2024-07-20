@@ -6,7 +6,6 @@ useLinearICP: true
 usePointToPlane: true
 # Correspondence method (NN / SHOOT)
 correspondenceMethod: NN
-useColors: false
 # Other settings
 matchingMaxDistance: 1
 nbOfIterations: 20

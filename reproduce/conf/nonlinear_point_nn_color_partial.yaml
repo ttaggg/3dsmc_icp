@@ -1,7 +1,6 @@
 useLinearICP: false
 usePointToPoint: true
-correspondenceMethod: NN
-useColors: true
+correspondenceMethod: NN_COLORS
 dataDir: ../../Data/greyc_partial/
 experimentName: nonlinear_point_nn_color_partial
 

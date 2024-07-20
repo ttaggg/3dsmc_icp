@@ -1,7 +1,6 @@
 useLinearICP: false
 useSymmetric: true
-correspondenceMethod: NN
-useColors: true
+correspondenceMethod: NN_COLORS
 dataDir: ../../Data/greyc/
 experimentName: nonlinear_symm_nn_color
 

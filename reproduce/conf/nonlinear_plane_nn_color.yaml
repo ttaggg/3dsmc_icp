@@ -1,7 +1,6 @@
 useLinearICP: false
 usePointToPlane: true
-correspondenceMethod: NN
-useColors: true
+correspondenceMethod: NN_COLORS
 dataDir: ../../Data/greyc/
 experimentName: nonlinear_plane_nn_color
 

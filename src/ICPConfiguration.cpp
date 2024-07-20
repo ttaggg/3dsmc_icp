@@ -25,7 +25,6 @@ std::unordered_map<std::string, ConfigItem> createTaskConfigMap(ICPConfiguration
 std::unordered_map<std::string, ConfigItem> createTrainingConfigMap(ICPConfiguration &config)
 {
     return {
-        {"useColors", {&config.useColors}},
         {"correspondenceMethod", {&config.correspondenceMethod}},
         {"matchingMaxDistance", {&config.matchingMaxDistance}},
         {"nbOfIterations", {&config.nbOfIterations}},
@@ -164,10 +163,5 @@ void ICPConfiguration::_sanityCheck()
 
         // temp restriction due to a uncertainty in symmetric icp implementation
         assert(usePointToPoint + usePointToPlane + useSymmetric == 1 && "For linearized ICP we do not combine several methods.");
-    }
-
-    if (useColors)
-    {
-        assert(correspondenceMethod != "SHOOT" && "Color is not supported for normal shoot.");
     }
 }
