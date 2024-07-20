@@ -117,3 +117,36 @@ private:
 
 	int findNearestNeighbor(const Vector3f &point);
 };
+
+/**
+ * Normal shoot correspondence with colors.
+ */
+
+class NormalShootCorrespondenceWithColors : public Search
+{
+public:
+	NormalShootCorrespondenceWithColors();
+	~NormalShootCorrespondenceWithColors();
+
+	void buildIndex(const std::vector<Vector3f> &targetPoints,
+					const std::vector<Vector3f> *targetColors = nullptr,
+					const std::vector<Vector3f> *targetNormals = nullptr);
+	std::vector<Match> queryMatches(const std::vector<Vector3f> &transformedPoints,
+									const std::vector<Vector3f> *transformedColors = nullptr,
+									const std::vector<Vector3f> *transformedNormals = nullptr);
+
+private:
+	std::vector<Vector3f> m_targetPoints;
+	int m_nTrees;
+	float *m_flatPoints;
+	flann::Index<flann::L2<float>> *m_index;
+
+	void _buildIndex(const std::vector<Vector3f> &targetPoints,
+					 const std::vector<Vector3f> &targetColors,
+					 const std::vector<Vector3f> &targetNormals);
+	std::vector<Match> _queryMatches(const std::vector<Vector3f> &transformedPoints,
+									 const std::vector<Vector3f> &transformedColors,
+									 const std::vector<Vector3f> &transformedNormals);
+
+	int findNearestNeighbor(const Matrix<float, 6, 1> &point);
+};

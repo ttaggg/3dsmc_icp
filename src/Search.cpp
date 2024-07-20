@@ -358,3 +358,159 @@ int NormalShootCorrespondence::findNearestNeighbor(const Vector3f &point)
 
     return nearestIndex;
 }
+
+/**
+ * Normal shoot correspondence with colors.
+ */
+
+NormalShootCorrespondenceWithColors::NormalShootCorrespondenceWithColors()
+    : Search(),
+      m_nTrees{1},
+      m_index{nullptr},
+      m_flatPoints{nullptr} {}
+
+NormalShootCorrespondenceWithColors::~NormalShootCorrespondenceWithColors()
+{
+    if (m_flatPoints)
+    {
+        delete[] m_flatPoints;
+    }
+    if (m_index)
+    {
+        delete m_index;
+    }
+}
+
+void NormalShootCorrespondenceWithColors::buildIndex(const std::vector<Vector3f> &targetPoints,
+                                                     const std::vector<Vector3f> *targetColors,
+                                                     const std::vector<Vector3f> *targetNormals)
+{
+    return _buildIndex(targetPoints, *targetColors, *targetNormals);
+}
+
+void NormalShootCorrespondenceWithColors::_buildIndex(const std::vector<Vector3f> &targetPoints,
+                                                      const std::vector<Vector3f> &targetColors,
+                                                      const std::vector<Vector3f> &targetNormals)
+{
+    m_flatPoints = new float[targetPoints.size() * 6];
+    for (size_t pointIndex = 0; pointIndex < targetPoints.size(); pointIndex++)
+    {
+        for (size_t dim = 0; dim < 3; dim++)
+        {
+            m_flatPoints[pointIndex * 6 + dim] = targetPoints[pointIndex][dim];
+            m_flatPoints[pointIndex * 6 + 3 + dim] = targetColors[pointIndex][dim];
+        }
+    }
+
+    flann::Matrix<float> dataset(m_flatPoints, targetPoints.size(), 6);
+
+    m_index = new flann::Index<flann::L2<float>>(dataset, flann::KDTreeIndexParams(m_nTrees));
+    m_index->buildIndex();
+}
+
+std::vector<Match> NormalShootCorrespondenceWithColors::queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                                     const std::vector<Vector3f> *transformedColors,
+                                                                     const std::vector<Vector3f> *transformedNormals)
+{
+    return _queryMatches(transformedPoints, *transformedColors, *transformedNormals);
+}
+
+std::vector<Match> NormalShootCorrespondenceWithColors::_queryMatches(const std::vector<Vector3f> &transformedPoints,
+                                                                      const std::vector<Vector3f> &transformedColors,
+                                                                      const std::vector<Vector3f> &transformedNormals)
+{
+    /*
+    Idea:
+        1. Find closest target point to a given source point just like NN correspondence.
+        2. Find the projection of this target point on a ray made with source normal.
+        3. Find the new match as a closest point to this project point.
+    */
+
+    if (!m_index)
+    {
+        std::cout << "FLANN index needs to be built before querying any matches." << std::endl;
+        return {};
+    }
+
+    float *queryPoints = new float[transformedPoints.size() * 6];
+    for (size_t pointIndex = 0; pointIndex < transformedPoints.size(); ++pointIndex)
+    {
+        for (size_t dim = 0; dim < 3; ++dim)
+        {
+            queryPoints[pointIndex * 6 + dim] = transformedPoints[pointIndex][dim];
+            queryPoints[pointIndex * 6 + 3 + dim] = transformedColors[pointIndex][dim];
+        }
+    }
+
+    flann::Matrix<float> query(queryPoints, transformedPoints.size(), 6);
+    flann::Matrix<int> indices(new int[query.rows * 1], query.rows, 1);
+    flann::Matrix<float> distances(new float[query.rows * 1], query.rows, 1);
+
+    // Do a knn search, searching for 1 nearest point and using 16 checks.
+    flann::SearchParams searchParams{16};
+    searchParams.cores = 0;
+    m_index->knnSearch(query, indices, distances, 1, searchParams);
+
+    // Filter the matches.
+    const unsigned nMatches = transformedPoints.size();
+    std::vector<Match> matches;
+    matches.reserve(nMatches);
+
+    for (int i = 0; i < nMatches; ++i)
+    {
+        Vector3f nearestPoint(
+            m_flatPoints[*indices[i] * 6],
+            m_flatPoints[*indices[i] * 6 + 1],
+            m_flatPoints[*indices[i] * 6 + 2]);
+
+        auto origin = transformedPoints.at(i);
+        auto normal = transformedNormals.at(i);
+
+        Vector3f vec = nearestPoint - origin;
+        float t = vec.dot(normal) / normal.dot(normal);
+        Vector3f intersection = origin + t * normal;
+
+        Matrix<float, 6, 1> intersectionColor;
+        intersectionColor << intersection.x(),
+            intersection.y(),
+            intersection.z(),
+            queryPoints[i * 6 + 3],
+            queryPoints[i * 6 + 3 + 1],
+            queryPoints[i * 6 + 3 + 2];
+
+        int nearestIndex = findNearestNeighbor(intersectionColor);
+
+        if (*distances[nearestIndex] <= m_maxDistance)
+        {
+            matches.push_back(Match{nearestIndex, 1.f});
+        }
+        else
+            matches.push_back(Match{-1, 0.f});
+    }
+
+    // Release the memory.
+    delete[] queryPoints;
+    delete[] indices.ptr();
+    delete[] distances.ptr();
+
+    return matches;
+}
+
+int NormalShootCorrespondenceWithColors::findNearestNeighbor(const Matrix<float, 6, 1> &point)
+{
+    float queryPoint[6] = {point[0], point[1], point[2], point[3], point[4], point[5]};
+    flann::Matrix<float> query(queryPoint, 1, 6);
+    flann::Matrix<int> indices(new int[1], 1, 1);
+    flann::Matrix<float> distances(new float[1], 1, 1);
+
+    flann::SearchParams searchParams{16};
+    searchParams.cores = 0;
+    m_index->knnSearch(query, indices, distances, 1, searchParams);
+
+    int nearestIndex = indices[0][0];
+
+    delete[] indices.ptr();
+    delete[] distances.ptr();
+
+    return nearestIndex;
+}
