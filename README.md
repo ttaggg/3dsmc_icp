@@ -10,8 +10,9 @@
 
 ## Introduction
 This is the project for the course 3D Scanning & Motion Capture at Technical University of Munich.
-The goal of this project is to compare different variants of ICP. 
-- Correspondence methods: Normal Shooting, Nearest Neighbors and Nearest Neighbors with Color Information. 
+The goal of this project is to compare different variants of ICP.
+- Sampling: full, uniform sampling and normal space sampling.
+- Correspondence methods: Normal Shooting, Normal Shooting with Colors, Nearest Neighbors and Nearest Neighbors with Colors. 
 - Objective functions: Point-to-Point, Point-to-Plane, Symmetric ICP (all three in both linearized and full forms).
 
 ## Installation
@@ -51,8 +52,8 @@ cmake ..
 make
 ```
 
-### Building and running on Windows
-glog is added to the requirements.
+### Building and running on Windows and possibly Linux
+glog is added to the requirements for Windows.
 ```bash
 mv CMakeLists_win_linux.txt CMakeLists.txt
 mkdir build && cd build
@@ -88,6 +89,7 @@ cd build
 ```
 
 In the config you can set:
+- sampling method
 - correspondence method
 - optimization objective
 - whether to use color information
@@ -104,11 +106,13 @@ runSequenceICP: false
 useLinearICP: true
 # ICP objective(s)
 useSymmetric: true
-# Correspondence method (NN / SHOOT)
+# Sampling
+sampling: NSPACE
+samplingRatio: 0.05
+# Correspondence method (NN / SHOOT / NN_COLORS / SHOOT_COLORS)
 correspondenceMethod: NN
-useColors: true
 # Other settings
-matchingMaxDistance: 0.1
+matchingMaxDistance: 5
 nbOfIterations: 10
 # Error metrics
 evaluateRMSENearest: true
@@ -123,7 +127,7 @@ Results are automatically saved into `results` directory, separated by experimen
 You can combine and average metrics with tools in `/visualize`: there is a README.
 
 
-<p align="middle">After visualization you will get images similar to these..</p>
+<p align="middle">After visualization you will get images similar to these.</p>
 
 <p align="middle">
   <img src="assets/nonlinears_rmse.png" width="40%" />
@@ -132,8 +136,8 @@ You can combine and average metrics with tools in `/visualize`: there is a READM
 
 
 ## Data
-The datasets was used:
-- GREYC 3D Colored Mesh Database (preprocessed) \
+The datasets were used:
+- GREYC 3D Colored Mesh Database (preprocessed)
 - TUM RGB-D dataset \
  [Download the data](https://syncandshare.lrz.de/getlink/fiUgchGbMDtkDJrsPWbAu9/Data.zip) and extract to the directory near the repository (this way example configs can be used without modifications).
 
