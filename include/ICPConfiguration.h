@@ -19,7 +19,7 @@ public:
     bool runShapeICP = false;
     bool runSequenceICP = false;
     // Sampling
-    std::string sampling = "FULL";
+    std::string sampling = "FULL"; // FULL or UNIF or NSPACE
     double samplingRatio = 1.0;
     // ICP type
     bool useLinearICP = false;
@@ -32,8 +32,8 @@ public:
     double weightSymmetric = 1.;
     // Whether to use color information.
     bool useColors = false;
-    // Correspondence method (NN / SHOOT)
-    std::string correspondenceMethod = "NN";
+    // Correspondence method
+    std::string correspondenceMethod = "NN"; // NN or NN_COLORS or SHOOT or SHOOT_COLORS
     // Other settings
     float matchingMaxDistance = 0.0f;
     int nbOfIterations = 0;

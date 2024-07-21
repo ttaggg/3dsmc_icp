@@ -454,20 +454,17 @@ public:
 	void downSampleMesh(float ratio, std::string strategy)
 	{
 
+		unsigned int numSamples = std::round(m_triangles.size() * ratio);
 		std::vector<Triangle> sampled_triangles;
+
 		if (strategy == "FULL")
-		{
 			return;
-		}
 		else if (strategy == "UNIF")
-		{
-			unsigned int numSamples = std::round(m_triangles.size() * ratio);
 			sampled_triangles = sampleUniformPointsFromMesh(m_vertices, m_triangles, numSamples);
-		}
+		else if (strategy == "NSPACE")
+			sampled_triangles = sampleNormalSpaceFromMesh(m_vertices, m_triangles, numSamples);
 		else
-		{
 			std::cerr << "Unknown sampling strategy." << std::endl;
-		}
 
 		std::vector<Vertex> new_m_vertices;
 		std::vector<Triangle> new_m_triangles;
@@ -504,6 +501,67 @@ public:
 
 		m_vertices = std::move(new_m_vertices);
 		m_triangles = std::move(new_m_triangles);
+	}
+
+	Eigen::Vector3f _computeTriangleNormal(const Eigen::Vector3f &v0,
+										   const Eigen::Vector3f &v1,
+										   const Eigen::Vector3f &v2)
+	{
+		Eigen::Vector3f normal = (v1 - v0).cross(v2 - v0).normalized();
+		return normal;
+	}
+
+	std::pair<float, float> _convertToSphericalCoords(const Eigen::Vector3f &normal)
+	{
+		float azimuth = std::atan2(normal.y(), normal.x()); // Angle in the x-y plane
+		float elevation = std::acos(normal.z());			// Angle from the z-axis
+		return {azimuth, elevation};
+	}
+
+	std::vector<Triangle> sampleNormalSpaceFromMesh(const std::vector<Vertex> &vertices,
+													const std::vector<Triangle> &triangles,
+													unsigned int numSamples,
+													int azimuthBins = 36,
+													int elevationBins = 36)
+	{
+		std::vector<Triangle> samples;
+		std::unordered_map<int, std::vector<size_t>> normalBuckets;
+
+		for (size_t i = 0; i < triangles.size(); ++i)
+		{
+			const auto &t = triangles[i];
+			Eigen::Vector3f normal = _computeTriangleNormal(vertices[t.idx0].position.head(3),
+															vertices[t.idx1].position.head(3),
+															vertices[t.idx2].position.head(3));
+
+			auto [azimuth, elevation] = _convertToSphericalCoords(normal);
+
+			int azimuthIndex = static_cast<int>((azimuth + M_PI) / (2 * M_PI) * azimuthBins) % azimuthBins;
+			int elevationIndex = static_cast<int>(elevation / M_PI * elevationBins);
+
+			int bucketIndex = azimuthIndex * elevationBins + elevationIndex;
+
+			normalBuckets[bucketIndex].push_back(i);
+		}
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+
+		while (samples.size() < numSamples)
+		{
+			for (auto &bucket : normalBuckets)
+			{
+				if (bucket.second.empty())
+					continue;
+				std::uniform_int_distribution<> dist(0, bucket.second.size() - 1);
+				size_t triangleIdx = bucket.second[dist(gen)];
+				samples.push_back(triangles[triangleIdx]);
+				if (samples.size() >= numSamples)
+					break;
+			}
+		}
+
+		return samples;
 	}
 
 	float _computeTriangleArea(const Vector3f &v0, const Vector3f &v1, const Vector3f &v2)
