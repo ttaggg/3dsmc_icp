@@ -31,7 +31,9 @@ std::string DataLoader::getName(size_t index)
 bool MeshDataLoader::createMeshes(size_t index,
                                   SimpleMesh &sourceMesh,
                                   SimpleMesh &targetMesh,
-                                  Matrix4f &gt_trans)
+                                  Matrix4f &gt_trans,
+                                  std::string sampling,
+                                  float samplingRatio)
 {
     if (index >= meshPaths.size())
     {
@@ -41,6 +43,8 @@ bool MeshDataLoader::createMeshes(size_t index,
 
     sourceMesh.loadMesh(meshPaths[index]);
     targetMesh = sourceMesh.transformMesh(gt_trans);
+
+    sourceMesh.downSampleMesh(samplingRatio, sampling);
 
     return true;
 }
@@ -64,7 +68,9 @@ void MeshDataLoader::loadMeshPaths(const std::string &directoryPath)
 bool PartialMeshDataLoader::createMeshes(size_t index,
                                          SimpleMesh &sourceMesh,
                                          SimpleMesh &targetMesh,
-                                         Matrix4f &gt_trans)
+                                         Matrix4f &gt_trans,
+                                         std::string sampling,
+                                         float samplingRatio)
 {
 
     if (index >= meshPaths.size())
@@ -77,6 +83,7 @@ bool PartialMeshDataLoader::createMeshes(size_t index,
     std::string targetMeshPath = fs::path{meshPaths[index]} / fs::path{"2.off"};
 
     sourceMesh.loadMesh(sourceMeshPath);
+    sourceMesh.downSampleMesh(samplingRatio, sampling);
 
     SimpleMesh tmpMesh;
     tmpMesh.loadMesh(targetMeshPath);

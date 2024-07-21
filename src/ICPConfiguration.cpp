@@ -25,6 +25,8 @@ std::unordered_map<std::string, ConfigItem> createTaskConfigMap(ICPConfiguration
 std::unordered_map<std::string, ConfigItem> createTrainingConfigMap(ICPConfiguration &config)
 {
     return {
+        {"sampling", {&config.sampling}},
+        {"samplingRatio", {&config.samplingRatio}},
         {"correspondenceMethod", {&config.correspondenceMethod}},
         {"matchingMaxDistance", {&config.matchingMaxDistance}},
         {"nbOfIterations", {&config.nbOfIterations}},

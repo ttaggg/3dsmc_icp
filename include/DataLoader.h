@@ -16,7 +16,9 @@ public:
     virtual bool createMeshes(size_t index,
                               SimpleMesh &sourceMesh,
                               SimpleMesh &targetMesh,
-                              Matrix4f &gt_trans) = 0;
+                              Matrix4f &gt_trans,
+                              std::string sampling,
+                              float samplingRatio) = 0;
     virtual void loadMeshPaths(const std::string &directoryPath) = 0;
     virtual ~DataLoader() = default;
 
@@ -30,7 +32,9 @@ public:
     bool createMeshes(size_t index,
                       SimpleMesh &sourceMesh,
                       SimpleMesh &targetMesh,
-                      Matrix4f &gt_trans);
+                      Matrix4f &gt_trans,
+                      std::string sampling,
+                      float samplingRatio);
     void loadMeshPaths(const std::string &directoryPath);
 };
 
@@ -40,6 +44,8 @@ public:
     bool createMeshes(size_t index,
                       SimpleMesh &sourceMesh,
                       SimpleMesh &targetMesh,
-                      Matrix4f &gt_trans);
+                      Matrix4f &gt_trans,
+                      std::string sampling,
+                      float samplingRatio);
     void loadMeshPaths(const std::string &directoryPath);
 };

@@ -67,7 +67,12 @@ int runShapeICP(const ICPConfiguration &config)
 		// Prepare data amd output directories.
 		Matrix4f gtTransform = getRandomTransformation(rng, 45, 0.5);
 		SimpleMesh sourceMesh, targetMesh;
-		dataloader->createMeshes(i, sourceMesh, targetMesh, gtTransform);
+		dataloader->createMeshes(i,
+								 sourceMesh,
+								 targetMesh,
+								 gtTransform,
+								 config.sampling,
+								 config.samplingRatio);
 		prepareOutputDirectories("../results", config.experimentName, dataloader->getName(i),
 								 outputDir, filenameOutputColor, filenameOutputRG);
 

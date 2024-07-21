@@ -58,7 +58,9 @@ void Evaluator::addMetrics(double elapsedSecsMatch,
     if (evaluateTime)
     {
         timeMatchMetric.push_back(elapsedSecsMatch);
+        std::cout << "Matching time: " << elapsedSecsMatch << std::endl;
         timeOptiMetric.push_back(elapsedSecsOpti);
+        std::cout << "Optimization time: " << elapsedSecsOpti << std::endl;
     }
 }
 

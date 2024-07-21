@@ -18,6 +18,9 @@ public:
     // Task
     bool runShapeICP = false;
     bool runSequenceICP = false;
+    // Sampling
+    std::string sampling = "FULL";
+    double samplingRatio = 1.0;
     // ICP type
     bool useLinearICP = false;
     // ICP objective(s)

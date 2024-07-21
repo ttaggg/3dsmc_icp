@@ -2,9 +2,11 @@
 
 #include <iostream>
 #include <fstream>
-
+#include <random>
+#include <unordered_set>
 #include "Eigen.h"
 #include "VirtualSensor.h"
+#include <Utils.h>
 
 struct Vertex
 {
@@ -447,6 +449,97 @@ public:
 		}
 
 		return mesh;
+	}
+
+	void downSampleMesh(float ratio, std::string strategy)
+	{
+
+		std::vector<Triangle> sampled_triangles;
+		if (strategy == "FULL")
+		{
+			return;
+		}
+		else if (strategy == "UNIF")
+		{
+			unsigned int numSamples = std::round(m_triangles.size() * ratio);
+			sampled_triangles = sampleUniformPointsFromMesh(m_vertices, m_triangles, numSamples);
+		}
+		else
+		{
+			std::cerr << "Unknown sampling strategy." << std::endl;
+		}
+
+		std::vector<Vertex> new_m_vertices;
+		std::vector<Triangle> new_m_triangles;
+
+		// Step 1: Collect all unique vertex indices from sampled_triangles
+		std::unordered_set<unsigned int> unique_indices;
+		for (const auto &triangle : sampled_triangles)
+		{
+			unique_indices.insert(triangle.idx0);
+			unique_indices.insert(triangle.idx1);
+			unique_indices.insert(triangle.idx2);
+		}
+
+		// Step 2: Create a mapping from old vertex indices to new vertex indices
+		std::unordered_map<unsigned int, unsigned int> old_to_new_index;
+		new_m_vertices.clear();
+		unsigned int new_index = 0;
+		for (unsigned int old_index : unique_indices)
+		{
+			old_to_new_index[old_index] = new_index++;
+			new_m_vertices.push_back(m_vertices[old_index]);
+		}
+
+		// Step 3: Populate new_m_triangles using the mapping
+		new_m_triangles.clear();
+		for (const auto &triangle : sampled_triangles)
+		{
+			Triangle new_triangle;
+			new_triangle.idx0 = old_to_new_index[triangle.idx0];
+			new_triangle.idx1 = old_to_new_index[triangle.idx1];
+			new_triangle.idx2 = old_to_new_index[triangle.idx2];
+			new_m_triangles.push_back(new_triangle);
+		}
+
+		m_vertices = std::move(new_m_vertices);
+		m_triangles = std::move(new_m_triangles);
+	}
+
+	float _computeTriangleArea(const Vector3f &v0, const Vector3f &v1, const Vector3f &v2)
+	{
+		return ((v1 - v0).cross(v2 - v0)).norm() / 2.0f;
+	}
+
+	std::vector<Triangle> sampleUniformPointsFromMesh(const std::vector<Vertex> &vertices, const std::vector<Triangle> &triangles, unsigned int numSamples)
+	{
+		std::vector<Triangle> samples;
+
+		std::vector<float> areas(triangles.size());
+		float totalArea = 0.0f;
+		for (size_t i = 0; i < triangles.size(); ++i)
+		{
+			const auto &t = triangles[i];
+			float area = _computeTriangleArea(vertices[t.idx0].position.head(3),
+											  vertices[t.idx1].position.head(3),
+											  vertices[t.idx2].position.head(3));
+			areas[i] = area;
+			totalArea += area;
+		}
+
+		std::discrete_distribution<> areaDist(areas.begin(), areas.end());
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		for (unsigned int i = 0; i < numSamples; ++i)
+		{
+			int triangleIdx = areaDist(gen);
+			const auto &t = triangles[triangleIdx];
+
+			samples.push_back(t);
+		}
+
+		return samples;
 	}
 
 private:
